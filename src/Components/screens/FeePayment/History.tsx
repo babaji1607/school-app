@@ -1,22 +1,41 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons'; // For icons
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const FeePaymentScreen = () => {
-  // Sample data representing the payment details
-  const paymentData = [
-    { id: '1', period: 'APR-JUNE', date: '21/03/2024', receiptNo: '167', amount: '51590', payMode: 'Debit Card' },
-    { id: '2', period: 'JULY-SEPT', date: '10/07/2024', receiptNo: '3791', amount: '11590', payMode: 'Online' },
-    { id: '3', period: 'OCT-DEC', date: '16/10/2024', receiptNo: '7269', amount: '11590', payMode: 'Online' },
-    { id: '4', period: 'JAN-MAR', date: '02/02/2025', receiptNo: '10781', amount: '11790', payMode: 'Online' },
-  ];
+  const [refreshing, setRefreshing] = useState(false);
+  const [paymentData, setPaymentData] = useState([
+    { id: '1', period: 'APR-JUNE', date: '2024-03-21', receiptNo: '167', amount: '51590', payMode: 'Debit Card' },
+    { id: '2', period: 'JULY-SEPT', date: '2024-07-10', receiptNo: '3791', amount: '11590', payMode: 'Online' },
+    { id: '3', period: 'OCT-DEC', date: '2024-10-16', receiptNo: '7269', amount: '11590', payMode: 'Online' },
+    { id: '4', period: 'JAN-MAR', date: '2025-02-02', receiptNo: '10781', amount: '11790', payMode: 'Online' },
+  ]);
 
-  // Render each card
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000); // Simulating a fetch
+  }, []);
+
+  const getRelativeTime = (date) => {
+    const today = new Date();
+    const givenDate = new Date(date);
+    const diffInMs = today - givenDate;
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInDays === 0) return 'Today';
+    if (diffInDays === 1) return 'Yesterday';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+    return givenDate.toDateString();
+  };
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.periodText}>{item.period}</Text>
-        <Text style={styles.dateText}>{item.date}</Text>
+        <Text style={styles.dateText}>{getRelativeTime(item.date)}</Text>
       </View>
       <View style={styles.details}>
         <Text style={styles.detailText}>Receipt No: <Text style={styles.value}>{item.receiptNo}</Text></Text>
@@ -25,11 +44,11 @@ const FeePaymentScreen = () => {
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button}>
-          <MaterialIcons name="print" size={20} color="white" />
+          <MaterialIcons name="print" size={16} color="white" />
           <Text style={styles.buttonText}>Print</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
-          <MaterialIcons name="arrow-forward" size={20} color="white" />
+          <MaterialIcons name="arrow-forward" size={16} color="white" />
           <Text style={styles.buttonText}>Detail</Text>
         </TouchableOpacity>
       </View>
@@ -37,12 +56,18 @@ const FeePaymentScreen = () => {
   );
 
   return (
-    <FlatList
-      data={paymentData}
-      keyExtractor={(item) => item.id}
-      renderItem={renderItem}
-      contentContainerStyle={styles.listContainer}
-    />
+    <>
+      <View style={{ alignItems: 'center', padding: 3 }}>
+        <Text style={{ fontSize: 11, color: '#708090' }}>Pull down to refresh</Text>
+      </View>
+      <FlatList
+        data={paymentData}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.listContainer}
+      />
+    </>
   );
 };
 
@@ -57,7 +82,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 15,
     marginBottom: 10,
-    elevation: 3, // Shadow effect for Android
+    elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
@@ -73,19 +98,19 @@ const styles = StyleSheet.create({
   periodText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#555',
+    color: '#333',
   },
   dateText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#777',
   },
   details: {
-    marginBottom: 15,
+    marginBottom: 10,
   },
   detailText: {
     fontSize: 14,
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   value: {
     fontWeight: 'bold',
@@ -97,8 +122,8 @@ const styles = StyleSheet.create({
   },
   button: {
     flexDirection: 'row',
-    backgroundColor: '#0a730a',
-    padding: 10,
+    backgroundColor: 'blue',
+    padding: 8,
     borderRadius: 5,
     alignItems: 'center',
     width: '48%',
@@ -106,7 +131,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     marginLeft: 5,
   },

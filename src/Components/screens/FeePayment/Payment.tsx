@@ -18,15 +18,15 @@ const customStyles = {
   currentStepIndicatorSize: 35,
   separatorStrokeWidth: 2,
   currentStepStrokeWidth: 3,
-  stepStrokeCurrentColor: "#4CAF50",
+  stepStrokeCurrentColor: "blue",
   stepStrokeWidth: 3,
-  stepStrokeFinishedColor: "#4CAF50",
+  stepStrokeFinishedColor: "blue",
   stepStrokeUnFinishedColor: "#aaaaaa",
-  separatorFinishedColor: "#4CAF50",
+  separatorFinishedColor: "blue",
   separatorUnFinishedColor: "#aaaaaa",
-  stepIndicatorFinishedColor: "#4CAF50",
+  stepIndicatorFinishedColor: "blue",
   stepIndicatorUnFinishedColor: "#ffffff",
-  stepIndicatorCurrentColor: "#4CAF50",
+  stepIndicatorCurrentColor: "blue",
   stepIndicatorLabelFontSize: 13,
   currentStepIndicatorLabelFontSize: 13,
   stepIndicatorLabelCurrentColor: "#ffffff",
@@ -72,7 +72,7 @@ const PaymentScreen = () => {
 
         {/* Installment Section */}
         <View style={styles.card}>
-          <Text style={styles.title}>MEETANSH</Text>
+          <Text style={styles.title}>Student name</Text>
 
           {/* Fee Inputs */}
           <View style={styles.inputContainer}>
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   button: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "blue",
     paddingVertical: 12,
     borderRadius: 6,
     alignItems: "center",
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontSize: 14,
-    color: "#4CAF50",
+    color: "blue",
     fontWeight: "bold",
   },
 });
