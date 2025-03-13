@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  StyleSheet, Text, View, ScrollView, FlatList
+  StyleSheet, Text, View, ScrollView
 } from "react-native";
 import { Calendar, toDateId } from "@marceloterreiro/flash-calendar";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -54,20 +54,15 @@ const AttendanceScreen = () => {
 
       {/* Upcoming Holidays Section */}
       <Text style={styles.sectionTitle}>Upcoming Holidays</Text>
-      <FlatList
-        style={{ marginBottom: 20 }}
-        data={upcomingHolidays}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.holidayCard}>
-            <MaterialIcons name={item.icon} size={24} color="#03A9F4" />
-            <View style={styles.holidayTextContainer}>
-              <Text style={styles.holidayName}>{item.name}</Text>
-              <Text style={styles.holidayDate}>{item.date}</Text>
-            </View>
+      {upcomingHolidays.map((item) => (
+        <View key={item.id} style={styles.holidayCard}>
+          <MaterialIcons name={item.icon} size={24} color="#03A9F4" />
+          <View style={styles.holidayTextContainer}>
+            <Text style={styles.holidayName}>{item.name}</Text>
+            <Text style={styles.holidayDate}>{item.date}</Text>
           </View>
-        )}
-      />
+        </View>
+      ))}
     </ScrollView>
   );
 };

@@ -14,7 +14,7 @@ const TabRoot = () => {
                     <Ionicons name='person-outline' size={20} />
                 </TouchableOpacity>
             </View>
-            <Tabs initialRouteName='home' screenOptions={{
+            <Tabs initialRouteName='index' screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
                     height: 60,
@@ -30,7 +30,7 @@ const TabRoot = () => {
                         ),
                         title: 'Home'
                     }}
-                    name='home' />
+                    name='index' />
                 <Tabs.Screen
                     options={{
                         tabBarIcon: ({ color }) => ( // Use color prop

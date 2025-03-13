@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Dimensions } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Dimensions, Animated } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import Animated, { FadeInUp, useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Book, Calendar, LibraryBig, MessageCircle, Newspaper } from 'lucide-react-native';
 
@@ -67,12 +66,16 @@ export default function HomePage() {
         'Inter-Bold': Inter_700Bold,
     });
 
-    const scrollY = useSharedValue(0);
-    const scrollHandler = useAnimatedScrollHandler({
-        onScroll: (event) => {
-            scrollY.value = event.contentOffset.y;
-        },
-    });
+    const fadeAnim = useRef(new Animated.Value(0)).current; // For fade-in animations
+
+    useEffect(() => {
+        // Fade-in animation for the entire screen
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+        }).start();
+    }, [fadeAnim]);
 
     if (!fontsLoaded) {
         return null;
@@ -81,8 +84,7 @@ export default function HomePage() {
     return (
         <SafeAreaView style={styles.container}>
             <Animated.ScrollView
-                onScroll={scrollHandler}
-                scrollEventThrottle={16}
+                style={{ opacity: fadeAnim }} // Apply fade animation to the entire ScrollView
                 showsVerticalScrollIndicator={false}
             >
                 {/* News Carousel */}
@@ -128,8 +130,7 @@ export default function HomePage() {
                     {events.map((event, index) => (
                         <Animated.View
                             key={event.id}
-                            entering={FadeInUp.delay(index * 200)}
-                            style={styles.eventCard}
+                            style={[styles.eventCard, { opacity: fadeAnim }]} // Apply fade animation to each event card
                         >
                             <Image source={{ uri: event.image }} style={styles.eventImage} />
                             <View style={styles.eventContent}>

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ScrollView } from 'react-native';
 
 export default function NotificationsScreen() {
     const [refreshing, setRefreshing] = useState(false);
@@ -58,31 +57,31 @@ export default function NotificationsScreen() {
         }, 1500);
     };
 
-    const renderNotification = ({ item }) => (
-        <TouchableOpacity style={styles.notificationCard}>
-            <View style={styles.notificationHeader}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.date}>{item.date}</Text>
-            </View>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
-            <Text style={styles.description}>{item.description}</Text>
-            <View style={styles.uploadInfo}>
-                <Text style={styles.uploadedBy}>Uploaded By: {item.uploadedBy}</Text>
-            </View>
-        </TouchableOpacity>
-    );
-
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor="#008751" barStyle="light-content" />
-            <ScrollView contentContainerStyle={styles.scrollContainer} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#008751']} tintColor="#008751" />}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContainer}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#008751']} tintColor="#008751" />
+                }
+            >
                 <Text style={styles.headerText}>Notifications</Text>
-                <FlatList
-                    data={notifications}
-                    renderItem={renderNotification}
-                    keyExtractor={item => item.id}
-                    contentContainerStyle={styles.listContainer}
-                />
+                <View style={styles.listContainer}>
+                    {notifications.map(item => (
+                        <TouchableOpacity key={item.id} style={styles.notificationCard}>
+                            <View style={styles.notificationHeader}>
+                                <Text style={styles.title}>{item.title}</Text>
+                                <Text style={styles.date}>{item.date}</Text>
+                            </View>
+                            <Text style={styles.subtitle}>{item.subtitle}</Text>
+                            <Text style={styles.description}>{item.description}</Text>
+                            <View style={styles.uploadInfo}>
+                                <Text style={styles.uploadedBy}>Uploaded By: {item.uploadedBy}</Text>
+                            </View>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -157,3 +156,4 @@ const styles = StyleSheet.create({
         color: '#777',
     },
 });
+
