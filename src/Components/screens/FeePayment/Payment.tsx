@@ -4,6 +4,8 @@ import {
 } from "react-native";
 import StepIndicator from "react-native-step-indicator";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import RazorpayCheckout from 'react-native-razorpay';
+
 
 const stepsData = [
   { id: 1, title: "Select Installment", icon: "event-note" },
@@ -117,7 +119,29 @@ const PaymentScreen = () => {
           {/* Proceed Button */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => setCurrentPosition(currentPosition + 1)}
+            onPress={() => {
+              var options = {
+                description: 'Credits towards consultation',
+                image: 'https://i.imgur.com/3g7nmJC.png',
+                currency: 'INR',
+                key: 'rzp_test_w452IaxWwMliP6', // Your api key
+                amount: '100',
+                name: 'foo',
+                prefill: {
+                  email: 'user@example.com',
+                  contact: '9999999999',
+                  name: 'Razorpay Software'
+                },
+                theme: { color: '#F37254' }
+              }
+              RazorpayCheckout.open(options).then((data) => {
+                // handle success
+                alert(`Success: ${data.razorpay_payment_id}`);
+              }).catch((error) => {
+                // handle failure
+                alert(`Error: ${error.code} | ${error.description}`);
+              });
+            }}
           >
             <Text style={styles.buttonText}>Proceed</Text>
           </TouchableOpacity>

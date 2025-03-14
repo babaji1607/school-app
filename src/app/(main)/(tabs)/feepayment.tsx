@@ -3,6 +3,8 @@ import { View, useWindowDimensions, StyleSheet } from 'react-native';
 import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
 import Payment from '../../../Components/screens/FeePayment/Payment';
 import History from '../../../Components/screens/FeePayment/History';
+import RazorpayCheckout from 'react-native-razorpay';
+
 
 const FeePayment = () => {
     const layout = useWindowDimensions();
