@@ -9,7 +9,7 @@ const TabRoot = () => {
         <View style={{ flex: 1, }}>
             <View style={{ alignItems: 'flex-end', width: '100%', padding: 10, gap: 10, flexDirection: 'row', justifyContent: 'flex-end' }}>
                 <TouchableOpacity onPress={() => {
-                    router.push('/(main)/profile')
+                    router.push('/(home)/profile')
                 }}>
                     <Ionicons name='person-outline' size={20} />
                 </TouchableOpacity>
