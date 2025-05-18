@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Book, Calendar, LibraryBig, MessageCircle, Newspaper } from 'lucide-react-native';
 import { useSharedValue } from "react-native-reanimated";
 import Carousel from "react-native-reanimated-carousel";
-import { useAuth } from '@clerk/clerk-expo';
 
 const { width } = Dimensions.get('window');
 
@@ -76,7 +75,6 @@ export default function HomePage() {
         'Inter-Bold': Inter_700Bold,
     });
 
-    const { getToken } = useAuth();
 
     const scrollOffsetValue = useSharedValue(0);
 
@@ -92,11 +90,11 @@ export default function HomePage() {
     }, [fadeAnim]);
 
     useEffect(() => {
-        const showtoken = async () => {
-            let token = await getToken({ template: 'default-one' });
-            console.log(token);
-        };
-        showtoken();
+        // const showtoken = async () => {
+        //     let token = await getToken({ template: 'default-one' });
+        //     console.log(token);
+        // };
+        // showtoken();
     }, []);
 
     if (!fontsLoaded) {

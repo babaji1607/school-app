@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SignOutButton } from '../../Components/SignOutButton';
 
 const ProfileScreen = () => {
     // Sample user data (would come from API/state in real app)
@@ -13,7 +12,7 @@ const ProfileScreen = () => {
         father: 'Father Name',
         mother: 'Mother Name',
         address: '123 Example Street, Sample City',
-        dateOfBirth: '12-05-2012',  
+        dateOfBirth: '12-05-2012',
         fatherContact: '987asdf650',
         motherContact: '9432fasdfw11',
     };
@@ -113,7 +112,7 @@ const ProfileScreen = () => {
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity> */}
 
-                    <SignOutButton></SignOutButton>
+                    {/* <SignOutButton></SignOutButton> */}
                 </View>
             </ScrollView>
         </SafeAreaView>
