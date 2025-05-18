@@ -1,15 +1,15 @@
-import { Link } from 'expo-router'
 import { Text, View } from 'react-native'
 import { Redirect } from 'expo-router'
 
 export default function Page() {
-    // const { user } = useUser()
+
+    // logic will be here for auth and everything
+
 
     return (
         <View>
-            <Redirect href={'/(home)/(tabs)/home'} />
-            <Text>Hello App</Text>
-            {/* <Redirect href={'/(auth)/auth'} /> */}
+            <Redirect href='/(auth)/auth' />
+            {/* <Text>Hello App</Text> */}
         </View>
     )
 }
