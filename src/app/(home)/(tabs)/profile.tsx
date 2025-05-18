@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { SignOutButton } from '../../Components/SignOutButton';
 
 const ProfileScreen = () => {
     // Sample user data (would come from API/state in real app)
@@ -12,7 +13,7 @@ const ProfileScreen = () => {
         father: 'Father Name',
         mother: 'Mother Name',
         address: '123 Example Street, Sample City',
-        dateOfBirth: '12-05-2012',
+        dateOfBirth: '12-05-2012',  
         fatherContact: '987asdf650',
         motherContact: '9432fasdfw11',
     };
@@ -33,11 +34,11 @@ const ProfileScreen = () => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
+            {/* <View style={styles.header}>
                 <TouchableOpacity style={styles.menuButton}>
                     <MaterialIcons name="menu" size={24} color="#555" />
                 </TouchableOpacity>
-            </View>
+            </View> */}
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileContainer}>
@@ -107,10 +108,12 @@ const ProfileScreen = () => {
                     {/* {renderMenuItem('settings', 'Settings')} */}
                     {renderMenuItem('info-outline', 'About')}
 
-                    <TouchableOpacity style={styles.logoutButton}>
+                    {/* <TouchableOpacity style={styles.logoutButton}>
                         <MaterialIcons name="logout" size={18} color="red" />
                         <Text style={styles.logoutText}>Logout</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
+
+                    <SignOutButton></SignOutButton>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -133,10 +136,12 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flexGrow: 1,
+        paddingBottom: 200,
+        paddingTop: 40,
     },
     profileContainer: {
         alignItems: 'center',
-        paddingVertical: 20,
+        paddingBottom: 20,
     },
     profileImageContainer: {
         position: 'relative',

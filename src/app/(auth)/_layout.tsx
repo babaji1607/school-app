@@ -7,10 +7,10 @@ const Auth = () => {
 
   const { isSignedIn } = useAuth()
   if (isSignedIn) {
-    return <Redirect href={'/(main)/(tabs)/index'} />
+    return <Redirect href={'/(home)/(tabs)/home'} />
   }
   return (
-    <Stack />
+    <Stack screenOptions={{ headerShown: false }} />
   )
 }
 

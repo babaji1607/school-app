@@ -32,28 +32,21 @@ const FeePaymentScreen = () => {
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.periodText}>{item.period}</Text>
-        <Text style={styles.dateText}>{getRelativeTime(item.date)}</Text>
+    <View style={styles.historyCard}>
+      <View style={styles.leftCircle}>
+        <Text style={styles.circleText}>Q1</Text>
       </View>
-      <View style={styles.details}>
-        <Text style={styles.detailText}>Receipt No: <Text style={styles.value}>{item.receiptNo}</Text></Text>
-        <Text style={styles.detailText}>Amount: <Text style={styles.value}>{item.amount}</Text></Text>
-        <Text style={styles.detailText}>Pay Mode: <Text style={styles.value}>{item.payMode}</Text></Text>
+      <View style={styles.rightContent}>
+        <Text style={styles.feeTitle}>Quaterly Fee</Text>
+        <Text style={styles.description}>lkfsd flksdjf slfksadjfl sdflkj</Text>
+        <Text style={styles.dateText}>5 May 2025</Text>
       </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
-          <MaterialIcons name="print" size={16} color="white" />
-          <Text style={styles.buttonText}>Print</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
-          <MaterialIcons name="arrow-forward" size={16} color="white" />
-          <Text style={styles.buttonText}>Detail</Text>
-        </TouchableOpacity>
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountText}>₹22500</Text>
       </View>
     </View>
   );
+
 
   return (
     <>
@@ -77,62 +70,52 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 10,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  header: {
+  historyCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    paddingBottom: 5,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
     marginBottom: 10,
+    elevation: 2,
   },
-  periodText: {
+  leftCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#ff7f7f',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  circleText: {
+    color: '#fff',
+    fontWeight: 'bold',
     fontSize: 16,
+  },
+  rightContent: {
+    flex: 1,
+  },
+  feeTitle: {
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#333',
+  },
+  description: {
+    fontSize: 12,
+    color: '#555',
   },
   dateText: {
-    fontSize: 13,
-    color: '#777',
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
-  details: {
-    marginBottom: 10,
+  amountContainer: {
+    marginLeft: 'auto',
   },
-  detailText: {
+  amountText: {
     fontSize: 14,
-    color: '#333',
-    marginBottom: 4,
-  },
-  value: {
     fontWeight: 'bold',
     color: '#000',
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  button: {
-    flexDirection: 'row',
-    backgroundColor: 'blue',
-    padding: 8,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: '48%',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginLeft: 5,
   },
 });

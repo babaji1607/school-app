@@ -1,55 +1,72 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ScrollView, Image } from 'react-native';
+import { Feather, FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 export default function NotificationsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [notifications, setNotifications] = useState([
         {
             id: '1',
-            title: 'New Assignment',
-            subtitle: 'Practice Worksheet',
-            description: 'Your ward Student Name (IV-D):- Money Class IV',
-            date: '27-02-2025',
-            uploadedBy: 'Teacher',
-            notifyBy: 'Mobile',
+            type: 'alert',
+            title: 'Notification Alert!',
+            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
+            time: '5 mins ago',
+            iconType: 'alert',
+            hasAction: false
         },
         {
             id: '2',
-            title: 'New Assignment',
-            subtitle: 'Practice Worksheet',
-            description: 'Your ward Student Name (IV-D):- Time',
-            date: '26-02-2025',
-            uploadedBy: 'Teacher',
-            notifyBy: 'Mobile',
+            type: 'notification',
+            title: 'Notification Alert!',
+            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
+            time: 'Sunday 9/3/2025',
+            iconType: 'notification',
+            hasAction: false
         },
         {
             id: '3',
-            title: 'New Assignment',
-            subtitle: 'Practice Worksheet',
-            description: 'Your ward Student Name (IV-D):- Data Handling Class IV',
-            date: '25-02-2025',
-            uploadedBy: 'Teacher',
-            notifyBy: 'Mobile',
+            type: 'live',
+            title: 'Live Class Alert!',
+            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys sfsd dfssdf sdf f sdfsfdsfds fsd sdfsdfsfsdfs sdfssdfsdf',
+            time: '1 week ago',
+            iconType: 'live',
+            hasAction: true,
+            actionType: 'join',
+            actionText: 'Join'
+        },
+        {
+            id: '4',
+            type: 'payment',
+            title: 'Fee Payment due alert',
+            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
+            time: '',
+            iconType: 'payment',
+            hasAction: true,
+            actionType: 'payment',
+            actionText: 'Pay Fee'
+        },
+        {
+            id: '5',
+            type: 'notification',
+            title: 'Notification Alert!',
+            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
+            time: 'Sunday 9/3/2025',
+            iconType: 'notification',
+            hasAction: false
         },
     ]);
 
     const onRefresh = () => {
         setRefreshing(true);
         setTimeout(() => {
-            const currentDate = new Date();
-            const day = String(currentDate.getDate()).padStart(2, '0');
-            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-            const year = currentDate.getFullYear();
-            const formattedDate = `${day}-${month}-${year}`;
-
             const newNotification = {
                 id: String(Date.now()),
-                title: 'New Assignment',
-                subtitle: 'Practice Worksheet',
-                description: 'Your ward Student Name (IV-D):- New Material',
-                date: formattedDate,
-                uploadedBy: 'Teacher',
-                notifyBy: 'Mobile',
+                type: 'alert',
+                title: 'New Notification Alert!',
+                description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
+                time: 'Just now',
+                iconType: 'alert',
+                hasAction: false
             };
 
             setNotifications([newNotification, ...notifications]);
@@ -57,29 +74,95 @@ export default function NotificationsScreen() {
         }, 1500);
     };
 
+    const renderNotificationIcon = (iconType) => {
+        switch (iconType) {
+            case 'alert':
+                return (
+                    <View style={[styles.iconContainer, { backgroundColor: '#FFE0E0' }]}>
+                        <FontAwesome5 name="bell" size={20} color="#E74C3C" />
+                    </View>
+                );
+            case 'notification':
+                return (
+                    <View style={[styles.iconContainer, { backgroundColor: '#E8F4F8' }]}>
+                        <Ionicons name="notifications" size={20} color="#3498DB" />
+                    </View>
+                );
+            case 'live':
+                return (
+                    <View style={[styles.iconContainer, { backgroundColor: '#E8F8F5' }]}>
+                        <FontAwesome5 name="video" size={20} color="#1ABC9C" />
+                    </View>
+                );
+            case 'payment':
+                return (
+                    <View style={[styles.iconContainer, { backgroundColor: '#FEF5E7' }]}>
+                        <MaterialIcons name="payment" size={20} color="#F39C12" />
+                    </View>
+                );
+            default:
+                return (
+                    <View style={styles.iconContainer}>
+                        <Feather name="info" size={20} color="#3498DB" />
+                    </View>
+                );
+        }
+    };
+
+    const renderActionButton = (notification) => {
+        if (!notification.hasAction) return null;
+
+        let buttonStyle = styles.actionButton;
+        let textColor = '#3498DB';
+
+        if (notification.actionType === 'join') {
+            buttonStyle = { ...buttonStyle, backgroundColor: '#FCE4EC' };
+            textColor = '#E91E63';
+        } else if (notification.actionType === 'payment') {
+            buttonStyle = { ...buttonStyle, backgroundColor: '#FEF5E7' };
+            textColor = '#F39C12';
+        }
+
+        return (
+            <TouchableOpacity style={buttonStyle}>
+                <Text style={[styles.actionButtonText, { color: textColor }]}>
+                    {notification.actionText}
+                </Text>
+            </TouchableOpacity>
+        );
+    };
+
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar backgroundColor="#008751" barStyle="light-content" />
+            <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+            <View style={styles.header}>
+                <Text style={styles.headerText}>Notifications</Text>
+            </View>
             <ScrollView
                 contentContainerStyle={styles.scrollContainer}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#008751']} tintColor="#008751" />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3498DB']} />
                 }
             >
-                <Text style={styles.headerText}>Notifications</Text>
-                <View style={styles.listContainer}>
-                    {notifications.map(item => (
-                        <TouchableOpacity key={item.id} style={styles.notificationCard}>
-                            <View style={styles.notificationHeader}>
-                                <Text style={styles.title}>{item.title}</Text>
-                                <Text style={styles.date}>{item.date}</Text>
+                <View style={styles.notificationList}>
+                    {notifications.map(notification => (
+                        <View key={notification.id} style={styles.notificationCard}>
+                            <View style={styles.notificationContent}>
+                                {renderNotificationIcon(notification.iconType)}
+                                <View style={styles.textContainer}>
+                                    <View style={styles.titleRow}>
+                                        <Text style={styles.title}>{notification.title}</Text>
+                                        {notification.time ? (
+                                            <Text style={styles.time}>{notification.time}</Text>
+                                        ) : null}
+                                    </View>
+                                    <Text style={styles.description} numberOfLines={2}>
+                                        {notification.description}
+                                    </Text>
+                                    {renderActionButton(notification)}
+                                </View>
                             </View>
-                            <Text style={styles.subtitle}>{item.subtitle}</Text>
-                            <Text style={styles.description}>{item.description}</Text>
-                            <View style={styles.uploadInfo}>
-                                <Text style={styles.uploadedBy}>Uploaded By: {item.uploadedBy}</Text>
-                            </View>
-                        </TouchableOpacity>
+                        </View>
                     ))}
                 </View>
             </ScrollView>
@@ -90,70 +173,84 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f5f5f5',
     },
-    scrollContainer: {
-        paddingBottom: 20,
+    header: {
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
     },
     headerText: {
-        fontSize: 22,
-        fontWeight: '600',
+        fontSize: 20,
+        fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
-        paddingVertical: 20,
     },
-    listContainer: {
+    scrollContainer: {
+        flexGrow: 1,
+    },
+    notificationList: {
         padding: 12,
     },
     notificationCard: {
-        backgroundColor: 'white',
-        borderRadius: 8,
-        padding: 16,
+        backgroundColor: '#fff',
+        borderRadius: 12,
         marginBottom: 12,
-        borderLeftWidth: 5,
-        borderLeftColor: '#008751',
-        elevation: 3,
+        overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
     },
-    notificationHeader: {
+    notificationContent: {
+        flexDirection: 'row',
+        padding: 16,
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    textContainer: {
+        flex: 1,
+    },
+    titleRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     title: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#008751',
-    },
-    date: {
-        color: '#666',
-        fontSize: 12,
-    },
-    subtitle: {
         fontSize: 15,
-        fontWeight: '500',
-        color: '#444',
-        marginVertical: 6,
+        fontWeight: 'bold',
+        color: '#333',
+        flex: 1,
+    },
+    time: {
+        fontSize: 12,
+        color: '#888',
     },
     description: {
         fontSize: 13,
-        color: '#555',
-        marginBottom: 8,
-        borderBottomWidth: 0.5,
-        borderBottomColor: '#ddd',
-        paddingBottom: 8,
+        color: '#666',
+        lineHeight: 18,
+        marginBottom: 10,
     },
-    uploadInfo: {
-        flexDirection: 'row',
-        justifyContent: 'flex-start',
+    actionButton: {
+        alignSelf: 'flex-start',
+        paddingVertical: 6,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        marginTop: 5,
     },
-    uploadedBy: {
+    actionButtonText: {
         fontSize: 13,
-        color: '#777',
+        fontWeight: '500',
     },
 });
-

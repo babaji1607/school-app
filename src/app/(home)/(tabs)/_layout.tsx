@@ -1,39 +1,58 @@
 import { Tabs } from 'expo-router'
 import { MaterialIcons, Octicons, Ionicons, Feather } from '@expo/vector-icons'
-import { View, Text, TouchableOpacity } from 'react-native'
+import { View, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
 
 const TabRoot = () => {
     const router = useRouter()
     return (
-        <View style={{ flex: 1, }}>
-            <View style={{ alignItems: 'flex-end', width: '100%', padding: 10, gap: 10, flexDirection: 'row', justifyContent: 'flex-end' }}>
-                <TouchableOpacity onPress={() => {
-                    router.push('/(home)/profile')
+        <View style={{ flex: 1 }}>
+            {/* Profile FAB - fixed position on all screens */}
+            <TouchableOpacity
+                style={{
+                    backgroundColor: '#007AFF',
+                    width: 30,
+                    height: 30,
+                    // display: 'hidden',
+                    borderRadius: 28,
+                    position: 'absolute',
+                    top: 15, // Position above tab bar
+                    right: 20,
+                    elevation: 8, // More elevation for better shadow on Android
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3.84,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 999, // Ensure it's above other elements
+                }}
+                onPress={() => {
+                    router.push('/(home)/(tabs)/profile')
                 }}>
-                    <Ionicons name='person-outline' size={20} />
-                </TouchableOpacity>
-            </View>
-            <Tabs initialRouteName='index' screenOptions={{
+                <Ionicons name='person-outline' color='#ffffff' size={18} />
+            </TouchableOpacity>
+
+            <Tabs initialRouteName='home' screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
                     height: 60,
                     paddingTop: 5
                 },
-                tabBarActiveTintColor: '#007AFF', // Change active tab color
-                tabBarInactiveTintColor: '#888', // Change inactive tab color
+                tabBarActiveTintColor: '#007AFF',
+                tabBarInactiveTintColor: '#888',
             }}>
                 <Tabs.Screen
                     options={{
-                        tabBarIcon: ({ color }) => ( // Use color prop
+                        tabBarIcon: ({ color }) => (
                             <MaterialIcons name='home' size={25} color={color} />
                         ),
                         title: 'Home'
                     }}
-                    name='index' />
+                    name='home' />
                 <Tabs.Screen
                     options={{
-                        tabBarIcon: ({ color }) => ( // Use color prop
+                        tabBarIcon: ({ color }) => (
                             <Feather name='bell' size={25} color={color} />
                         ),
                         title: 'Notifications'
@@ -55,8 +74,15 @@ const TabRoot = () => {
                         title: 'Fee Payment'
                     }}
                     name='feepayment' />
+                {/* Profile screen included in tabs but hidden from tab bar */}
+                <Tabs.Screen
+                    options={{
+                        href: null, // This prevents the tab from being accessible through the URL
+                        // tabBarButton: () => null, // This removes the tab button from the tab bar
+                    }}
+                    name='profile' />
             </Tabs>
-        </View >
+        </View>
     )
 }
 

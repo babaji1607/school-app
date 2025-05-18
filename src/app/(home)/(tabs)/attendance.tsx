@@ -73,7 +73,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    padding: 15,
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 200,
   },
   header: {
     fontSize: 22,
@@ -84,8 +86,10 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start",
     marginVertical: 15,
+    gap: 20,
+    flexWrap: "wrap",
   },
   legendItem: {
     flexDirection: "row",
