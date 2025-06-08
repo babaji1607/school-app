@@ -18,6 +18,7 @@ import {
   verticalScale,
 } from 'react-native-size-matters';
 import { useRouter } from 'expo-router';
+import messaging from '@react-native-firebase/messaging'
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -28,24 +29,16 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+
   const router = useRouter()
 
-  // useEffect(() => {
-  // checkExistingToken();
-  // }, []);
 
-  // const checkExistingToken = async () => {
-  //   const token = TokenStore.getToken();
-  //   if (token) {
-  //     const userInfo = await getUserInfo(token, (data) => {
-  //       navigateToMainApp(data);
-  //     });
 
-  //     if (!userInfo.success) {
-  //       TokenStore.clearAll();
-  //     }
-  //   }
-  // };
+
+  useEffect(() => {
+    // Alert.alert('Welcome to the Attendance App', 'Please login to continue.');
+  }, []);
+
 
   const navigateBasedOnRole = (role) => {
     switch (role) {
@@ -55,7 +48,7 @@ export default function LoginScreen({ navigation }) {
       case 'teacher':
         router.push('/(teacher)/(tabs)/attendance');
         break;
-      default:
+      default: // student
         router.push('/(home)/(tabs)/home');
         break;
     }
@@ -68,18 +61,26 @@ export default function LoginScreen({ navigation }) {
     }
 
     setIsLoading(true);
+    ['student_global', 'teacher_global'].forEach(async (curr) => {
+      await messaging().unsubscribeFromTopic(curr)
+    });
 
     try {
       const response = await adminLogin(
         userID,
         password,
-        (data) => {
+        async (data) => {
           console.log('Login successful:', data);
           if (data && data.access_token) {
             // Save token
             TokenStore.setToken(data.access_token);
-
-
+            if (data.role === 'teacher') {
+              // Subscribe to teacher topic
+              await messaging().subscribeToTopic('teacher_global');
+            } else {
+              // Subscribe to student topic
+              await messaging().subscribeToTopic('student_global');
+            }
             // Navigate based on user role
             navigateBasedOnRole(data.role);
           }

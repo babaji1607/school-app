@@ -1,4 +1,4 @@
-package com.anonymous.awesomeapp
+package com.school.firststep
 
 import android.app.Application
 import android.content.res.Configuration

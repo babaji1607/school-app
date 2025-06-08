@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "awesomeapp",
-    "slug": "awesomeapp",
+    "name": "firststep",
+    "slug": "firststep",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
@@ -16,7 +16,8 @@
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.anonymous.awesomeapp"
+      "package": "com.school.firststep",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -25,6 +26,9 @@
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
       [
         "expo-splash-screen",
         {

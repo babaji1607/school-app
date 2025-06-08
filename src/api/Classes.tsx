@@ -98,3 +98,36 @@ export const deleteClassroom = async (token, classroomId, onSuccess, onError) =>
         });
     }
 };
+
+export const  fetchClassroomsByTeacher = async (token, teacherId, onSuccess, onError) => {
+  const url = `${GLOBAL_URL}/classrooms/by-teacher/${teacherId}`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      // Trigger error callback with structured error
+      return onError({
+        status: response.status,
+        message: data?.detail || 'Failed to fetch classrooms'
+      });
+    }
+
+    onSuccess(data);
+
+  } catch (error) {
+    // Handle unexpected errors like network issues
+    onError({
+      status: 500,
+      message: error.message || 'An unexpected error occurred'
+    });
+  }
+};

@@ -1,4 +1,4 @@
-package com.anonymous.awesomeapp
+package com.school.firststep
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

@@ -49,3 +49,49 @@ export const getAttendanceSessions = async (
     }
 };
 
+export const submitAttendance = async (token, date, teacherId, subject, className, students, onSuccess, onError) => {
+    const url = `${GLOBAL_URL}/attendance/`;
+
+    const payload = {
+        date,
+        teacher_id: teacherId,
+        subject,
+        class_name: className,
+        records: students.map(student => ({
+            student_id: student.id,
+            status: student.status,
+            student_name: student.name
+        }))
+    };
+    // console.log(JSON.stringify(payload))
+    // return
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return onError({
+                status: response.status,
+                message: data?.detail || 'Failed to submit attendance'
+            });
+        }
+
+        onSuccess(data);
+    } catch (error) {
+        console.error('Error submitting attendance:', error);
+        onError({
+            status: 500,
+            message: error.message || 'An unexpected error occurred'
+        });
+    }
+};

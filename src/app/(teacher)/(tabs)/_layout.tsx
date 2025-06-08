@@ -28,7 +28,7 @@ const TabRoot = () => {
                     zIndex: 999, // Ensure it's above other elements
                 }}
                 onPress={() => {
-                    router.push('/(home)/(tabs)/profile')
+                    router.push('/(teacher)/(tabs)/profile')
                 }}>
                 <Ionicons name='person-outline' color='#ffffff' size={18} />
             </TouchableOpacity>
@@ -66,14 +66,6 @@ const TabRoot = () => {
                         title: 'Attendance'
                     }}
                     name='attendance' />
-                <Tabs.Screen
-                    options={{
-                        tabBarIcon: ({ color }) => (
-                            <MaterialIcons name='payment' size={25} color={color} />
-                        ),
-                        title: 'Fee Payment'
-                    }}
-                    name='feepayment' />
                 {/* Profile screen included in tabs but hidden from tab bar */}
                 <Tabs.Screen
                     options={{
