@@ -65,7 +65,7 @@ const AttendanceScreen = () => {
     const token = await TokenStore.getToken()
     const teacher = await TokenStore.getUserInfo()
     const teacherId = teacher.id
-    getAttendanceSessions(
+    await getAttendanceSessions(
       1,
       10,
       token,

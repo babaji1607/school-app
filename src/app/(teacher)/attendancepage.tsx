@@ -33,8 +33,9 @@ const AttendancePage = () => {
         setLoading(true)
         const token = await TokenStore.getToken()
         const teacher = await TokenStore.getUserInfo()
+        console.log('Fetching classrooms for teacher:', teacher.id)
 
-        fetchClassroomsByTeacher(token, teacher.id, (data) => {
+        await fetchClassroomsByTeacher(token, teacher.id, (data) => {
           console.log('Classrooms:', data)
 
           if (data && data.length > 0) {

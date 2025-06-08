@@ -33,11 +33,11 @@ export const adminLogin = async (email, password, onSucess = () => { }, onError 
         }
     } catch (e) {
         console.log(e);
-        return {
-            success: false,
-            message: "An error occurred while logging in. Please try again later.",
-            log: e
-        }
+        // return {
+        //     success: false,
+        //     message: "An error occurred while logging in. Please try again later.",
+        //     log: e
+        // }
     }
 }
 

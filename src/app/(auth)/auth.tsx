@@ -10,8 +10,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { adminLogin, getUserInfo } from '../../api/Auth';
-import { TokenStore } from '../../../TokenStore';
+import { adminLogin } from '../../api/Auth';
+import { TokenStore, setUserInfo } from '../../../TokenStore';
 import {
   moderateScale,
   scale,
@@ -32,12 +32,6 @@ export default function LoginScreen({ navigation }) {
 
   const router = useRouter()
 
-
-
-
-  useEffect(() => {
-    // Alert.alert('Welcome to the Attendance App', 'Please login to continue.');
-  }, []);
 
 
   const navigateBasedOnRole = (role) => {
@@ -74,13 +68,22 @@ export default function LoginScreen({ navigation }) {
           if (data && data.access_token) {
             // Save token
             TokenStore.setToken(data.access_token);
-            if (data.role === 'teacher') {
-              // Subscribe to teacher topic
-              await messaging().subscribeToTopic('teacher_global');
-            } else {
-              // Subscribe to student topic
-              await messaging().subscribeToTopic('student_global');
+            // aah I forgot to add this logic before fuck yeah now it is good
+            if (data.teacher_profile) {
+              TokenStore.setUserInfo(data.teacher_profile);
+            } else if (data.student_profile) {
+              TokenStore.setUserInfo(data.student_profile);
             }
+
+            // if (data.role === 'teacher') {
+            //   // Subscribe to teacher topic
+            //   await messaging().subscribeToTopic('teacher_global');
+            //   console.log('Subscribed to teacher_global topic');
+            // } else {
+            //   // Subscribe to student topic
+            //   await messaging().subscribeToTopic('student_global');
+            //   console.log('Subscribed to student_global topic');
+            // }
             // Navigate based on user role
             navigateBasedOnRole(data.role);
           }
