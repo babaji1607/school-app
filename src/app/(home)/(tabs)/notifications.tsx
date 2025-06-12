@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ScrollView, Image } from 'react-native';
 import { Feather, FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { fetchNotificationsByType } from '../../../api/Notifications';
+import { fetchNotificationById, fetchNotificationsByType } from '../../../api/Notifications';
 import { TokenStore } from '../../../../TokenStore';
 
 export default function NotificationsScreen() {
@@ -190,7 +190,7 @@ export default function NotificationsScreen() {
             let userInfo = await TokenStore.getUserInfo();
             let className = userInfo?.class_id;
             console.log('Fetching class notifications for:', className);
-            
+
             if (className) {
                 fetchNotificationsByType(className, token, (data) => {
                     console.log('Successfully fetched class notifications:', data);
@@ -221,19 +221,24 @@ export default function NotificationsScreen() {
             let userInfo = await TokenStore.getUserInfo();
             let userId = userInfo?.id || userInfo?.user_id;
             console.log('Fetching personal notifications for user:', userId);
-            
+
             if (userId) {
-                fetchNotificationsByType('personal', token, (data) => {
-                    console.log('Successfully fetched personal notifications:', data);
-                    const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
-                    setPersonalNotifications(transformedNotifications);
-                    setLoading(false);
-                    setRefreshing(false);
-                }, (error) => {
-                    console.log("Error fetching personal notifications:", error);
-                    setLoading(false);
-                    setRefreshing(false);
-                });
+                fetchNotificationById(
+                    userId,
+                    token,
+                    (data) => {
+                        console.log('Successfully fetched class notifications:', data);
+                        const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
+                        setPersonalNotifications(transformedNotifications);
+                        setLoading(false);
+                        setRefreshing(false);
+                    },
+                    (error) => {
+                        console.log("Error fetching class notifications:", error);
+                        setLoading(false);
+                        setRefreshing(false);
+                    }
+                )
             } else {
                 console.log("No user_id found in user info");
                 setLoading(false);
@@ -308,7 +313,7 @@ export default function NotificationsScreen() {
         }
 
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={buttonStyle}
                 onPress={() => handleActionPress(notification)}
             >

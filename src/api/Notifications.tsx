@@ -71,3 +71,37 @@ export const fetchNotificationsByType = (
 };
 
 
+
+
+export const fetchNotificationById = (
+    recipient_id,
+    token,
+    onSuccess,
+    onError
+) => {
+    if (!token) {
+        onError({ message: 'Authentication token is missing.' });
+        return;
+    }
+
+    fetch(`${GLOBAL_URL}/notifications/by-id/${recipient_id}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        }
+    })
+        .then(async (response) => {
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || response.statusText);
+            }
+
+            onSuccess(data);
+        })
+        .catch((error) => {
+            onError({ message: error.message });
+        });
+};
+
