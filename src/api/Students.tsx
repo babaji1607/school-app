@@ -138,3 +138,35 @@ export const deleteStudent = async (token, studentId, onSuccess, onError) => {
 };
 
 
+
+export const getStudentById = async (studentId) => {
+    try {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            throw new Error('Authentication token not found in localStorage.');
+        }
+
+        const response = await fetch(`${GLOBAL_URL}/students/student/${studentId}/`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error ${response.status}: ${errorData.detail || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Student data:', data);
+        return data;
+
+    } catch (error) {
+        console.error('Failed to fetch student data:', error.message);
+    }
+}
+
+

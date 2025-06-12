@@ -68,6 +68,7 @@ export default function Page() {
             if (enabled) {
                 console.log("Authorization status:", authStatus);
                 await messaging().subscribeToTopic('global');
+                console.log("Subscribed to global topic");
                 return true;
             }
         } catch (error) {
@@ -87,6 +88,7 @@ export default function Page() {
             if (permissionGranted) {
                 try {
                     const token = await messaging().getToken();
+                    await TokenStore.setNotificationToken(token)
                     console.log("FCM Token:", token);
                 } catch (error) {
                     console.log("FCM token error:", error);

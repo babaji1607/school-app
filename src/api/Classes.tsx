@@ -99,35 +99,65 @@ export const deleteClassroom = async (token, classroomId, onSuccess, onError) =>
     }
 };
 
-export const  fetchClassroomsByTeacher = async (token, teacherId, onSuccess, onError) => {
-  const url = `${GLOBAL_URL}/classrooms/by-teacher/${teacherId}`;
+export const fetchClassroomsByTeacher = async (token, teacherId, onSuccess, onError) => {
+    const url = `${GLOBAL_URL}/classrooms/by-teacher/${teacherId}`;
 
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!response.ok) {
-      // Trigger error callback with structured error
-      return onError({
-        status: response.status,
-        message: data?.detail || 'Failed to fetch classrooms'
-      });
+        if (!response.ok) {
+            // Trigger error callback with structured error
+            return onError({
+                status: response.status,
+                message: data?.detail || 'Failed to fetch classrooms'
+            });
+        }
+
+        onSuccess(data);
+
+    } catch (error) {
+        // Handle unexpected errors like network issues
+        onError({
+            status: 500,
+            message: error.message || 'An unexpected error occurred'
+        });
     }
-
-    onSuccess(data);
-
-  } catch (error) {
-    // Handle unexpected errors like network issues
-    onError({
-      status: 500,
-      message: error.message || 'An unexpected error occurred'
-    });
-  }
 };
+
+
+export const getClassroomById = async (token, classroomId) => {
+    try {
+
+        if (!token) {
+            throw new Error('Authentication token not found.');
+        }
+
+        const response = await fetch(`${GLOBAL_URL}/classrooms/classroom/${classroomId}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Error ${response.status}: ${errorData.detail || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Classroom data:', data);
+        return data;
+
+    } catch (error) {
+        console.error('Failed to fetch classroom data:', error.message);
+    }
+}

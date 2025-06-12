@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { adminLogin } from '../../api/Auth';
-import { TokenStore, setUserInfo } from '../../../TokenStore';
+import { TokenStore } from '../../../TokenStore';
 import {
   moderateScale,
   scale,
   verticalScale,
 } from 'react-native-size-matters';
 import { useRouter } from 'expo-router';
-import messaging from '@react-native-firebase/messaging'
+import messaging, { onTokenRefresh } from '@react-native-firebase/messaging'
+import { updateStudent } from '../../api/Students';
+import { getClassroomById } from '../../api/Classes';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -48,6 +50,28 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+
+
+  // maybe a security vulenerablity can be exploited so correct it later
+  const updateStudentDeviceToken = async (studentData) => {
+    // console.log("Student profile data", studentData)
+    const notification_token = await TokenStore.getNotificationToken()
+    const token = await TokenStore.getToken()
+    const updatedData = { ...studentData, notification_token }
+    // console.log("Student data", updatedData)
+    await updateStudent(
+      token,
+      updatedData.id,
+      updatedData,
+      (data) => {
+        console.log("successfully updated the notification token", data)
+      },
+      (data) => {
+        console.log('failed to upated the notification token', data)
+      }
+    )
+  }
+
   const handleLogin = async () => {
     if (!userID || !password) {
       Alert.alert('Login Error', 'Please enter both User ID and Password');
@@ -73,17 +97,26 @@ export default function LoginScreen({ navigation }) {
               TokenStore.setUserInfo(data.teacher_profile);
             } else if (data.student_profile) {
               TokenStore.setUserInfo(data.student_profile);
+              // now store this in somewhere or just directly subscribe to the class name here
+              // why not use the class_id directly as a topic to subscribe 
+              messaging().subscribeToTopic(data.student_profile.class_id)
+              console.log('Successfully subscribed to the class', data.student_profile.class_id)
             }
 
-            // if (data.role === 'teacher') {
-            //   // Subscribe to teacher topic
-            //   await messaging().subscribeToTopic('teacher_global');
-            //   console.log('Subscribed to teacher_global topic');
-            // } else {
-            //   // Subscribe to student topic
-            //   await messaging().subscribeToTopic('student_global');
-            //   console.log('Subscribed to student_global topic');
-            // }
+            await messaging().subscribeToTopic('global');
+            console.log("Subscribed to global topic");
+
+            if (data.role === 'teacher') {
+              // Subscribe to teacher topic
+              await messaging().subscribeToTopic('teacher');
+              console.log('Subscribed to teacher_global topic');
+            } else {
+              // Subscribe to student topic
+              await messaging().subscribeToTopic('student');
+              console.log('Subscribed to student_global topic');
+              // console.log("Student data", data.student_profile)
+              updateStudentDeviceToken(data.student_profile)
+            }
             // Navigate based on user role
             navigateBasedOnRole(data.role);
           }
@@ -106,6 +139,10 @@ export default function LoginScreen({ navigation }) {
       setIsLoading(false);
     }
   };
+
+
+  useEffect(() => {
+  }, [])
 
   return (
     <SafeAreaView style={styles.container}>

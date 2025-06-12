@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollVi
 import { MaterialIcons } from '@expo/vector-icons';
 import { TokenStore } from '../../../../TokenStore';
 import { useRouter } from 'expo-router';
+import messaging from '@react-native-firebase/messaging'
 
 const ProfileScreen = () => {
     // Sample user data (would come from API/state in real app)
@@ -35,8 +36,10 @@ const ProfileScreen = () => {
         </TouchableOpacity>
     );
 
-    const handleLogout = () => {
+    const handleLogout = async() => {
         TokenStore.clearAll()
+        messaging().unsubscribeFromTopic('teacher')
+        console.log('Successfully unsubscribed from teacher')
         router.replace('/(auth)/auth')
     }
 
