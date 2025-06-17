@@ -133,3 +133,34 @@ export const deleteTeacher = async (token, teacherId, onSuccess, onError) => {
     }
 };
 
+
+// global base url
+
+export const getTeacherById = async (
+    token: string,
+    teacherId: string,
+    onSuccess: (data: any) => void,
+    onError: (error: any) => void
+) => {
+    try {
+        const res = await fetch(`${GLOBAL_URL}/teachers/teacher/${teacherId}/`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.detail || 'Failed to fetch teacher');
+        }
+
+        const data = await res.json();
+        onSuccess(data);
+        return data
+    } catch (error: any) {
+        onError(error);
+    }
+};
+

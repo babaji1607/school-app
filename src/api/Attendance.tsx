@@ -95,3 +95,41 @@ export const submitAttendance = async (token, date, teacherId, subject, classNam
         });
     }
 };
+
+
+
+export const fetchStudentAttendanceCalendar = (
+    studentId,
+    month,
+    token,
+    onSuccess,
+    onError
+) => {
+    if (!token) {
+        onError({ message: 'Authentication token is missing.' });
+        return;
+    }
+
+    console.log('this is the token', token)
+
+    fetch(`${GLOBAL_URL}/attendance/student/${studentId}/calendar/?month=${month}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        }
+    })
+        .then(async (response) => {
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || response.statusText);
+            }
+
+            onSuccess(data);
+        })
+        .catch((error) => {
+            onError({ message: error.message });
+        });
+};
+

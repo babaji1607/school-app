@@ -1,24 +1,42 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { TokenStore } from '../../../../TokenStore';
 import { useRouter } from 'expo-router';
 import messaging from '@react-native-firebase/messaging'
+import { getUserInfo } from '../../../api/Auth';
+import { getTeacherById } from '../../../api/Teachers';
+
 
 const ProfileScreen = () => {
     // Sample user data (would come from API/state in real app)
-    const userData = {
-        name: 'Student Name',
-        class: 'Grade VI-B',
-        admissionNumber: '20220301254',
-        rollNumber: '15',
-        father: 'Father Name',
-        mother: 'Mother Name',
-        address: '123 Example Street, Sample City',
-        dateOfBirth: '12-05-2012',
-        fatherContact: '987asdf650',
-        motherContact: '9432fasdfw11',
-    };
+    const [userInfo, setUserInfo] = useState(null)
+    // data schema
+
+    //    {
+    //   "FatherContact": "string",
+    //   "FatherName": "pandu",
+    //   "MotherContact": "string",
+    //   "MotherName": "kunti",
+    //   "address": "Indraprasth",
+    //   "age": 16,
+    //   "class_id": "5f2d4084-f351-4e43-8e72-c556b387411c",
+    //   "classroom": {
+    //     "id": "5f2d4084-f351-4e43-8e72-c556b387411c",
+    //     "name": "Dhanurvidya",
+    //     "teacher_id": "84d337b9-9f8d-457c-9769-77e567da20f2"
+    //   },
+    //   "contact": "garud",
+    //   "id": "e20ac44a-ad8b-455d-bb0e-f59d573b7366",
+    //   "name": "bheema",
+    //   "notification_token": null,
+    //   "user": {
+    //     "email": "bheema",
+    //     "id": "c8a63fba-4b7d-4cdf-ab39-342776deffc6"
+    //   }
+    // }
+
+
 
     const router = useRouter()
 
@@ -36,12 +54,44 @@ const ProfileScreen = () => {
         </TouchableOpacity>
     );
 
-    const handleLogout = async() => {
+    const handleLogout = async () => {
         TokenStore.clearAll()
-        messaging().unsubscribeFromTopic('teacher')
+        await messaging().unsubscribeFromTopic('student')
         console.log('Successfully unsubscribed from teacher')
         router.replace('/(auth)/auth')
     }
+
+
+    const populateData = async () => {
+        try {
+            const Token = await TokenStore.getToken()
+            const teacher = await TokenStore.getUserInfo()
+            const stid = await teacher.id
+            console.log({
+                stid,
+                Token
+            })
+            const info = await getTeacherById(
+                Token,
+                stid,
+                (data) => {
+                    console.log("userInfo", data)
+                },
+                (err) => {
+                    console.log(err)
+                }
+            )
+            console.log(info)
+            setUserInfo(info)
+        } catch (e) {
+            console.log(e)
+        }
+    }
+
+
+    useEffect(() => {
+        populateData()
+    }, [])
 
     return (
         <SafeAreaView style={styles.container}>
@@ -63,57 +113,48 @@ const ProfileScreen = () => {
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.profileName}>{userData.name}</Text>
-                    <Text style={styles.profileRole}>{userData.class}</Text>
+                    <Text style={styles.profileName}>{userInfo?.name}</Text>
+                    <Text style={styles.profileRole}>Student</Text>
                 </View>
 
                 <View style={styles.detailsContainer}>
                     <Text style={styles.sectionTitle}>Student Information</Text>
 
                     <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
+                        {/* <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>ADM NO.</Text>
-                            <Text style={styles.infoValue}>{userData.admissionNumber}</Text>
-                        </View>
+                            <Text style={styles.infoValue}>{userInfo?.admissionNumber}</Text>
+                        </View> */}
 
-                        <View style={styles.infoRow}>
+                        {/* <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>ROLL NO.</Text>
-                            <Text style={styles.infoValue}>{userData.rollNumber}</Text>
+                            <Text style={styles.infoValue}>{userInfo?.rollNumber}</Text>
+                        </View> */}
+
+                        <View style={styles.infoRow}>
+                            <Text style={styles.infoLabel}>Age</Text>
+                            <Text style={styles.infoValue}>{userInfo?.age}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>FATHER</Text>
-                            <Text style={styles.infoValue}>{userData.father}</Text>
+                            <Text style={styles.infoLabel}>Username</Text>
+                            <Text style={styles.infoValue}>{userInfo?.name}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>MOTHER</Text>
-                            <Text style={styles.infoValue}>{userData.mother}</Text>
+                            <Text style={styles.infoLabel}>Subject</Text>
+                            <Text style={styles.infoValue}>{userInfo?.subject}</Text>
                         </View>
 
                         <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>ADDRESS</Text>
-                            <Text style={styles.infoValue}>{userData.address}</Text>
+                            <Text style={styles.infoLabel}>Contact</Text>
+                            <Text style={styles.infoValue}>{userInfo?.contact}</Text>
                         </View>
 
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>DATE OF BIRTH</Text>
-                            <Text style={styles.infoValue}>{userData.dateOfBirth}</Text>
-                        </View>
-
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>FATHER'S NO</Text>
-                            <Text style={styles.infoValue}>{userData.fatherContact}</Text>
-                        </View>
-
-                        <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>MOTHER'S NO</Text>
-                            <Text style={styles.infoValue}>{userData.motherContact}</Text>
-                        </View>
                     </View>
 
                     {/* {renderMenuItem('person', 'My Profile')} */}
-                    {renderMenuItem('mail', 'Messages', '5')}
+                    {/* {renderMenuItem('mail', 'Messages', '5')} */}
                     {/* {renderMenuItem('favorite', 'Favorites')} */}
                     {/* {renderMenuItem('location-on', 'Location')} */}
                     {/* {renderMenuItem('settings', 'Settings')} */}

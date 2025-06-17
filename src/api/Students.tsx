@@ -139,9 +139,9 @@ export const deleteStudent = async (token, studentId, onSuccess, onError) => {
 
 
 
-export const getStudentById = async (studentId) => {
+export const getStudentById = async (token, studentId) => {
     try {
-        const token = localStorage.getItem('token');
+        // const token = localStorage.getItem('token');
 
         if (!token) {
             throw new Error('Authentication token not found in localStorage.');
@@ -168,5 +168,9 @@ export const getStudentById = async (studentId) => {
         console.error('Failed to fetch student data:', error.message);
     }
 }
+
+
+
+
 
 

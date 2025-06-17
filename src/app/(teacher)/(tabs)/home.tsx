@@ -1,72 +1,74 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Book, Calendar, LibraryBig, MessageCircle, Newspaper } from 'lucide-react-native';
 import { useSharedValue } from "react-native-reanimated";
 import Carousel from "react-native-reanimated-carousel";
+import { getActiveEvents } from '../../../api/Events';
+import { TokenStore } from '../../../../TokenStore';
 
 const { width } = Dimensions.get('window');
 
-const newsData = [
-    {
-        id: '1',
-        image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop',
-        title: 'Annual Science Fair Winners Announced',
-        description: 'Congratulations to all participants in this year\'s Science Fair...'
-    },
-    {
-        id: '2',
-        image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
-        title: 'New Sports Complex Opening',
-        description: 'The state-of-the-art sports facility will be inaugurated next month...'
-    },
-    {
-        id: '3',
-        image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop',
-        title: 'Student Achievement Awards',
-        description: 'Outstanding students recognized for their academic excellence...'
-    }
-];
+// const newsData = [
+//     {
+//         id: '1',
+//         image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop',
+//         title: 'Annual Science Fair Winners Announced',
+//         description: 'Congratulations to all participants in this year\'s Science Fair...'
+//     },
+//     {
+//         id: '2',
+//         image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
+//         title: 'New Sports Complex Opening',
+//         description: 'The state-of-the-art sports facility will be inaugurated next month...'
+//     },
+//     {
+//         id: '3',
+//         image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop',
+//         title: 'Student Achievement Awards',
+//         description: 'Outstanding students recognized for their academic excellence...'
+//     }
+// ];
 
-const quickAccessItems = [
-    { id: '1', title: 'Library', icon: LibraryBig },
-    { id: '2', title: 'Calendar', icon: Calendar },
-    { id: '3', title: 'Homework', icon: Book },
-    { id: '4', title: 'Messages', icon: MessageCircle },
-    { id: '5', title: 'News', icon: Newspaper },
-];
+// const quickAccessItems = [
+//     { id: '1', title: 'Library', icon: LibraryBig },
+//     { id: '2', title: 'Calendar', icon: Calendar },
+//     { id: '3', title: 'Homework', icon: Book },
+//     { id: '4', title: 'Messages', icon: MessageCircle },
+//     { id: '5', title: 'News', icon: Newspaper },
+// ];
 
-const events = [
-    {
-        id: '1',
-        title: 'Parent-Teacher Meeting',
-        date: 'March 15, 2024',
-        image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
-        description: 'Annual parent-teacher conference to discuss student progress and academic performance'
-    },
-    {
-        id: '2',
-        title: 'Sports Day',
-        date: 'March 20, 2024',
-        image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
-        description: 'Annual sports competition featuring various athletic events and team competitions'
-    },
-    {
-        id: '3',
-        title: 'Science Exhibition',
-        date: 'March 25, 2024',
-        image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop',
-        description: 'Students showcase their innovative science projects with interactive demonstrations'
-    },
-    {
-        id: '4',
-        title: 'Art Workshop',
-        date: 'April 2, 2024',
-        image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=800&auto=format&fit=crop',
-        description: 'Creative arts workshop exploring different mediums and techniques for all students'
-    },
-];
+// const events = [
+//     {
+//         id: '1',
+//         title: 'Parent-Teacher Meeting',
+//         date: 'March 15, 2024',
+//         image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
+//         description: 'Annual parent-teacher conference to discuss student progress and academic performance'
+//     },
+//     {
+//         id: '2',
+//         title: 'Sports Day',
+//         date: 'March 20, 2024',
+//         image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
+//         description: 'Annual sports competition featuring various athletic events and team competitions'
+//     },
+//     {
+//         id: '3',
+//         title: 'Science Exhibition',
+//         date: 'March 25, 2024',
+//         image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop',
+//         description: 'Students showcase their innovative science projects with interactive demonstrations'
+//     },
+//     {
+//         id: '4',
+//         title: 'Art Workshop',
+//         date: 'April 2, 2024',
+//         image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=800&auto=format&fit=crop',
+//         description: 'Creative arts workshop exploring different mediums and techniques for all students'
+//     },
+// ];
 
 export default function HomePage() {
     const [fontsLoaded] = useFonts({
@@ -75,10 +77,31 @@ export default function HomePage() {
         'Inter-Bold': Inter_700Bold,
     });
 
+    const [events, setEvents] = useState([])
+
 
     const scrollOffsetValue = useSharedValue(0);
 
     const fadeAnim = useRef(new Animated.Value(0)).current; // For fade-in animations
+
+
+    const populateEvents = async () => {
+        try {
+            const token = await TokenStore.getToken()
+            await getActiveEvents(
+                token,
+                (data) => {
+                    console.log("Events fetched successfully", data)
+                    setEvents(data)
+                },
+                (error) => {
+                    console.log(error)
+                }
+            )
+        } catch (e) {
+            console.log(e)
+        }
+    }
 
     useEffect(() => {
         // Fade-in animation for the entire screen
@@ -90,6 +113,7 @@ export default function HomePage() {
     }, [fadeAnim]);
 
     useEffect(() => {
+        populateEvents()
         // const showtoken = async () => {
         //     let token = await getToken({ template: 'default-one' });
         //     console.log(token);
@@ -118,11 +142,11 @@ export default function HomePage() {
     // Event Card Component
     const EventCard = ({ event, fadeAnim }) => (
         <Animated.View style={[styles.eventCard, { opacity: fadeAnim }]}>
-            <Image source={{ uri: event.image }} style={styles.eventImage} />
+            <Image source={{ uri: event.imageUrl }} style={styles.eventImage} />
             <View style={styles.eventContentWrapper}>
                 <View style={styles.eventContent}>
                     <Text style={styles.eventTitle}>{event.title}</Text>
-                    <Text style={styles.eventDate}>{event.date}</Text>
+                    <Text style={styles.eventDate}>{event.event_date.split('T')[0]}</Text>
                     <Text
                         style={styles.eventDescription}
                         numberOfLines={3}
@@ -157,14 +181,14 @@ export default function HomePage() {
                         pagingEnabled={true}
                         autoPlay={true}
                         autoPlayInterval={3000}
-                        data={newsData}
+                        data={events.slice(0, 3)}
                         defaultScrollOffsetValue={scrollOffsetValue}
                         style={{ width: "100%" }}
                         onSnapToItem={(index) => console.log("current index:", index)}
                         renderItem={({ item }) => (
                             <View style={styles.carouselItem}>
                                 <Image
-                                    source={{ uri: item.image }}
+                                    source={{ uri: item.imageUrl }}
                                     style={styles.carouselImage}
                                     resizeMode="cover"
                                 />

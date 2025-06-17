@@ -36,3 +36,75 @@ export const getAllReceipts = async (
         return {};
     }
 }
+
+
+export const createFeeReceipt = (
+    data,
+    token,
+    onSuccess,
+    onError
+) => {
+    if (!token) {
+        onError({ message: 'Authentication token is missing.' });
+        return;
+    }
+
+    fetch(`${GLOBAL_URL}/fee-receipts/`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    })
+        .then(async (response) => {
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                throw new Error(responseData.detail || response.statusText);
+            }
+
+            onSuccess(responseData);
+        })
+        .catch((error) => {
+            onError({ message: error.message });
+        });
+};
+
+
+export const fetchFeeReceiptsByStudent = (
+    studentId,
+    page,
+    limit,
+    token,
+    onSuccess,
+    onError
+) => {
+    if (!token) {
+        onError({ message: 'Authentication token is missing.' });
+        return;
+    }
+
+    const url = `${GLOBAL_URL}/fee-receipts/student/${studentId}?page=${page}&limit=${limit}`;
+
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        }
+    })
+        .then(async (response) => {
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || response.statusText);
+            }
+
+            onSuccess(data);
+        })
+        .catch((error) => {
+            onError({ message: error.message });
+        });
+};

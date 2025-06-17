@@ -15,22 +15,8 @@ import { TokenStore } from "../../../../TokenStore";
 const AttendanceScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
+  const router = useRouter();
 
-  const router = useRouter()
-
-  // Dummy attendance history data
-  const attendanceHistory = [
-    { id: "1", title: "Full Class Present", date: "May 18, 2025", status: "present" },
-    { id: "2", title: "Two Students Absent", date: "May 17, 2025", status: "partial" },
-    { id: "3", title: "Holiday - No Class", date: "May 16, 2025", status: "holiday" },
-    { id: "4", title: "Three Students Absent", date: "May 15, 2025", status: "absent" },
-    { id: "5", title: "Full Class Present", date: "May 14, 2025", status: "present" },
-    { id: "6", title: "One Student Absent", date: "May 13, 2025", status: "partial" },
-    { id: "7", title: "Teacher Workshop", date: "May 12, 2025", status: "holiday" },
-    { id: "8", title: "Full Class Present", date: "May 11, 2025", status: "present" },
-  ];
-
-  // Status color mapping
   const statusColors = {
     present: "#4CAF50",
     partial: "#FF9800",
@@ -38,7 +24,6 @@ const AttendanceScreen = () => {
     holiday: "#03A9F4",
   };
 
-  // Status icon mapping
   const statusIcons = {
     present: "check-circle",
     partial: "remove-circle",
@@ -48,23 +33,21 @@ const AttendanceScreen = () => {
 
   const onRefresh = () => {
     setRefreshing(true);
-    // Empty function for now as requested
-    fetchAttendanceData()
+    fetchAttendanceData();
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
   };
 
   const takeAttendance = () => {
-    // Empty function for now as requested
     console.log("Take attendance button pressed");
-    router.push('/(teacher)/attendancepage')
+    router.push("/(teacher)/attendancepage");
   };
 
   const fetchAttendanceData = async () => {
-    const token = await TokenStore.getToken()
-    const teacher = await TokenStore.getUserInfo()
-    const teacherId = teacher.id
+    const token = await TokenStore.getToken();
+    const teacher = await TokenStore.getUserInfo();
+    const teacherId = teacher.id;
     await getAttendanceSessions(
       1,
       10,
@@ -79,33 +62,43 @@ const AttendanceScreen = () => {
       () => {
         console.log("Error fetching attendance data");
       }
-    )
-  }
+    );
+  };
 
   useEffect(() => {
-    fetchAttendanceData()
+    fetchAttendanceData();
+  }, []);
 
-  }, [])
+  // Check if attendance for today is already taken
+  const today = new Date().toISOString().split("T")[0];
+  const attendanceTakenToday = attendanceData.some(
+    (item) => item.date === today
+  );
 
   return (
     <ScrollView
       style={styles.container}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
       <Text style={styles.header}>Attendance</Text>
 
       {/* Take Today's Attendance Button */}
       <TouchableOpacity
-        style={styles.attendanceButton}
+        style={[
+          styles.attendanceButton,
+          attendanceTakenToday && { backgroundColor: "#ccc" },
+        ]}
         onPress={takeAttendance}
+        disabled={attendanceTakenToday}
       >
         <MaterialIcons name="add-circle" size={24} color="#fff" />
-        <Text style={styles.buttonText}>Take Today's Attendance</Text>
+        <Text style={styles.buttonText}>
+          {attendanceTakenToday
+            ? "Attendance Already Taken Today"
+            : "Take Today's Attendance"}
+        </Text>
       </TouchableOpacity>
 
       {/* Attendance History Section */}
@@ -113,14 +106,15 @@ const AttendanceScreen = () => {
 
       {attendanceData?.map((item) => (
         <TouchableOpacity
+          key={item.id}
           onPress={() => {
             router.push({
-              pathname: '/(teacher)/attendance_lookout',
-              params: { data: JSON.stringify(item) }
-            })
+              pathname: "/(teacher)/attendance_lookout",
+              params: { data: JSON.stringify(item) },
+            });
           }}
-          key={item.id}
-          style={styles.attendanceCard}>
+          style={styles.attendanceCard}
+        >
           <View style={styles.cardContent}>
             <View>
               <Text style={styles.cardTitle}>{item.class_name}</Text>

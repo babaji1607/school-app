@@ -1,58 +1,130 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  StyleSheet, Text, View, ScrollView
+  StyleSheet,
+  View,
+  Text,
+  ScrollView,
 } from "react-native";
-import { Calendar, toDateId } from "@marceloterreiro/flash-calendar";
+import { Calendar } from "react-native-calendars";
 import { MaterialIcons } from "@expo/vector-icons";
-
-const today = toDateId(new Date());
+import { fetchStudentAttendanceCalendar } from "../../../api/Attendance";
+import { TokenStore } from "../../../../TokenStore";
 
 const AttendanceScreen = () => {
-  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [attendanceData, setAttendanceData] = useState([])
 
-  // Marked Dates with Colors & Labels
-  const markedDates = {
-    "2025-03-05": { color: "#4CAF50", label: "Present" },
-    "2025-03-10": { color: "#FF9800", label: "Half Day" },
-    "2025-03-15": { color: "#F44336", label: "Absent" },
-    "2025-03-20": { color: "#03A9F4", label: "Holiday" },
-  };
+  // ✅ Dummy attendance data from backend
+  // const attendanceData = [
+  //   { date: "2025-06-01", status: "present" },
+  //   { date: "2025-06-02", status: "present" },
+  //   { date: "2025-06-03", status: "present" },
+  //   { date: "2025-06-04", status: "absent" },
+  //   { date: "2025-06-05", status: "absent" },
+  //   { date: "2025-06-06", status: "present" },
+  // ];
 
-  // Upcoming Holidays Data
+  // ✅ Dummy holiday list
   const upcomingHolidays = [
     { id: "1", name: "Happy Holi", date: "March 25, 2025", icon: "celebration" },
-    { id: "2", name: "Akshya Tritya", date: "April 18, 2025", icon: "event" },
-    { id: "3", name: "Sheetalastmi", date: "April 20, 2025", icon: "church" },
+    { id: "2", name: "Akshaya Tritiya", date: "April 18, 2025", icon: "event" },
+    { id: "3", name: "Sheetala Ashtami", date: "April 20, 2025", icon: "church" },
   ];
 
+  // ✅ Mark attendance on calendar
+  const markedDates = useMemo(() => {
+    const marks = {};
+    attendanceData.forEach((item, index) => {
+      const isFirst = index === 0 || attendanceData[index - 1].status !== item.status;
+      const isLast = index === attendanceData.length - 1 || attendanceData[index + 1].status !== item.status;
+      const isMiddle = !isFirst && !isLast;
+
+      marks[item.date] = {
+        startingDay: isFirst,
+        endingDay: isLast,
+        color: item.status === "present" ? "#4CAF50" : "#F44336",
+        textColor: "#fff",
+        ...(isMiddle && {
+          startingDay: false,
+          endingDay: false,
+        }),
+      };
+    });
+    return marks;
+  }, [attendanceData]);
+
+  const populateData = async () => {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
+      const formatted = `${year}-${month}`;
+      const token = await TokenStore.getToken()
+      const student = await TokenStore.getUserInfo()
+      const studentId = student?.id
+      fetchStudentAttendanceCalendar(
+        studentId,
+        formatted,
+        token,
+        (data) => {
+          console.log('successfully fetched attendance', data)
+          setAttendanceData(data)
+        },
+        (error) => {
+          console.log(error, 'Error')
+        }
+      )
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  useEffect(() => {
+    populateData()
+  }, [])
+
+
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Attendance</Text>
 
-      {/* Flash Calendar */}
+      {/* 📅 Calendar */}
       <Calendar
-        calendarActiveDateRanges={[{ startId: selectedDate, endId: selectedDate }]}
-        calendarMonthId={today}
-        calendarFormatLocale="en-US"
-        onCalendarDayPress={setSelectedDate}
-        calendarDayStyle={(dateId) => ({
-          borderWidth: markedDates[dateId] ? 3 : 0,
-          borderColor: markedDates[dateId]?.color || "transparent",
-          borderRadius: 25,
-        })}
+        markingType="period"
+        markedDates={markedDates}
+        onDayPress={(day) => setSelectedDate(day.dateString)}
+        theme={{
+          backgroundColor: "#ffffff",
+          calendarBackground: "#ffffff",
+          textSectionTitleColor: "#b6c1cd",
+          todayTextColor: "#03A9F4",
+          dayTextColor: "#2d4150",
+          textDisabledColor: "#d9e1e8",
+          arrowColor: "#333",
+          monthTextColor: "#333",
+          textDayFontWeight: "500",
+          textMonthFontWeight: "700",
+          textDayHeaderFontWeight: "600",
+          textDayFontSize: 16,
+          textMonthFontSize: 18,
+          textDayHeaderFontSize: 14,
+        }}
       />
 
-      {/* Attendance Legend */}
+      {/* 🔵 Legend */}
       <View style={styles.legendContainer}>
-        {Object.entries(markedDates).map(([_, { color, label }]) => (
-          <View key={label} style={styles.legendItem}>
-            <View style={[styles.legendCircle, { borderColor: color }]} />
-            <Text style={styles.legendText}>{label}</Text>
-          </View>
-        ))}
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: "#4CAF50" }]} />
+          <Text>Present</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: "#F44336" }]} />
+          <Text>Absent</Text>
+        </View>
       </View>
 
-      {/* Upcoming Holidays Section */}
+      {/* 🎉 Upcoming Holidays */}
       <Text style={styles.sectionTitle}>Upcoming Holidays</Text>
       {upcomingHolidays.map((item) => (
         <View key={item.id} style={styles.holidayCard}>
@@ -71,46 +143,37 @@ export default AttendanceScreen;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 20,
+    paddingBottom: 100,
     backgroundColor: "#fff",
-    paddingHorizontal: 25,
-    paddingTop: 20,
-    paddingBottom: 200,
   },
   header: {
     fontSize: 22,
     fontWeight: "bold",
     textAlign: "center",
-    marginBottom: 15,
+    marginBottom: 20,
     color: "#333",
   },
   legendContainer: {
     flexDirection: "row",
-    justifyContent: "flex-start",
-    marginVertical: 15,
-    gap: 20,
-    flexWrap: "wrap",
+    justifyContent: "center",
+    marginTop: 20,
+    gap: 30,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 6,
   },
-  legendCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 3,
-    marginRight: 8,
-  },
-  legendText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#444",
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginTop: 20,
+    marginTop: 30,
     marginBottom: 10,
     color: "#222",
   },
