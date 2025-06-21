@@ -1,4 +1,4 @@
-import React, { useEffect, useState, } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,12 @@ import {
   SafeAreaView,
   Alert,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native'; // ✅ Lottie import
 import { adminLogin } from '../../api/Auth';
 import { TokenStore } from '../../../TokenStore';
 import {
@@ -18,9 +22,9 @@ import {
   verticalScale,
 } from 'react-native-size-matters';
 import { useRouter } from 'expo-router';
-import messaging, { onTokenRefresh } from '@react-native-firebase/messaging'
+import messaging from '@react-native-firebase/messaging';
 import { updateStudent } from '../../api/Students';
-import { getClassroomById } from '../../api/Classes';
+import schoolbus from '../../assets/lottieFiles/schoolbus.json'
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -31,10 +35,7 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-
-  const router = useRouter()
-
-
+  const router = useRouter();
 
   const navigateBasedOnRole = (role) => {
     switch (role) {
@@ -50,27 +51,19 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-
-
-  // maybe a security vulenerablity can be exploited so correct it later
   const updateStudentDeviceToken = async (studentData) => {
-    // console.log("Student profile data", studentData)
-    const notification_token = await TokenStore.getNotificationToken()
-    const token = await TokenStore.getToken()
-    const updatedData = { ...studentData, notification_token }
-    // console.log("Student data", updatedData)
+    const notification_token = await TokenStore.getNotificationToken();
+    const token = await TokenStore.getToken();
+    const updatedData = { ...studentData, notification_token };
+
     await updateStudent(
       token,
       updatedData.id,
       updatedData,
-      (data) => {
-        console.log("successfully updated the notification token", data)
-      },
-      (data) => {
-        console.log('failed to upated the notification token', data)
-      }
-    )
-  }
+      (data) => console.log("Token updated successfully", data),
+      (error) => console.log("Token update failed", error)
+    );
+  };
 
   const handleLogin = async () => {
     if (!userID || !password) {
@@ -79,8 +72,9 @@ export default function LoginScreen({ navigation }) {
     }
 
     setIsLoading(true);
-    ['student_global', 'teacher_global'].forEach(async (curr) => {
-      await messaging().unsubscribeFromTopic(curr)
+
+    ['student_global', 'teacher_global'].forEach(async (topic) => {
+      await messaging().unsubscribeFromTopic(topic);
     });
 
     try {
@@ -88,40 +82,29 @@ export default function LoginScreen({ navigation }) {
         userID,
         password,
         async (data) => {
-          console.log('Login successful:', data);
           if (data && data.access_token) {
-            // Save token
             TokenStore.setToken(data.access_token);
-            // aah I forgot to add this logic before fuck yeah now it is good
+
             if (data.teacher_profile) {
               TokenStore.setUserInfo(data.teacher_profile);
             } else if (data.student_profile) {
               TokenStore.setUserInfo(data.student_profile);
-              // now store this in somewhere or just directly subscribe to the class name here
-              // why not use the class_id directly as a topic to subscribe 
-              messaging().subscribeToTopic(data.student_profile.class_id)
-              console.log('Successfully subscribed to the class', data.student_profile.class_id)
+              messaging().subscribeToTopic(data.student_profile.class_id);
+              updateStudentDeviceToken(data.student_profile);
             }
 
             await messaging().subscribeToTopic('global');
-            console.log("Subscribed to global topic");
 
             if (data.role === 'teacher') {
-              // Subscribe to teacher topic
               await messaging().subscribeToTopic('teacher');
-              console.log('Subscribed to teacher_global topic');
             } else {
-              // Subscribe to student topic
               await messaging().subscribeToTopic('student');
-              console.log('Subscribed to student_global topic');
-              // console.log("Student data", data.student_profile)
-              updateStudentDeviceToken(data.student_profile)
             }
-            // Navigate based on user role
+
             navigateBasedOnRole(data.role);
           }
         },
-        (error) => {
+        () => {
           Alert.alert(
             'Login Failed',
             'Invalid credentials or server error. Please try again.'
@@ -140,59 +123,77 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-
-  useEffect(() => {
-  }, [])
+  useEffect(() => { }, []);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.heading}>Login</Text>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="User ID"
-            value={userID}
-            onChangeText={setUserID}
-            autoCapitalize="none"
-            editable={!isLoading}
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            editable={!isLoading}
-          />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-              size={moderateScale(20)}
-              color="#FF7979"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          onPress={handleLogin}
-          style={styles.loginButton}
-          disabled={isLoading}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <View style={styles.customGradient}>
-            <Text style={styles.loginButtonText}>
-              {isLoading ? 'Logging in...' : 'Login'}
-            </Text>
+          <View style={styles.content}>
+            {/* ✅ Lottie Animation */}
+            <LottieView
+              source={schoolbus} // Adjust path if needed
+              autoPlay
+              loop
+              style={styles.lottie}
+            />
+
+            <Text style={styles.heading}>Login</Text>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="User ID"
+                value={userID}
+                onChangeText={setUserID}
+                autoCapitalize="none"
+                editable={!isLoading}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                editable={!isLoading}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={moderateScale(20)}
+                  color="#FF7979"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleLogin}
+              style={styles.loginButton}
+              disabled={isLoading}
+            >
+              <View style={styles.customGradient}>
+                <Text style={styles.loginButtonText}>
+                  {isLoading ? 'Logging in...' : 'Login'}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -201,12 +202,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     paddingHorizontal: scale(20),
   },
   content: {
     flex: 1,
     padding: scale(20),
     justifyContent: 'center',
+    minHeight: Dimensions.get('window').height - 100, // Ensures content takes full height
+  },
+  lottie: {
+    width: '100%',
+    height: verticalScale(150),
+    alignSelf: 'center',
+    marginBottom: verticalScale(10),
   },
   heading: {
     fontSize: isTablet ? moderateScale(22) : moderateScale(24),

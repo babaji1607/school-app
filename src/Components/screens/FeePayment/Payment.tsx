@@ -161,7 +161,7 @@ export default PaymentScreen;
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5b0c0",
     alignItems: "center",
     padding: 20,
   },

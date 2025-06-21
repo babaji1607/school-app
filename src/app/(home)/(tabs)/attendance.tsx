@@ -95,7 +95,7 @@ const AttendanceScreen = () => {
         markedDates={markedDates}
         onDayPress={(day) => setSelectedDate(day.dateString)}
         theme={{
-          backgroundColor: "#ffffff",
+          backgroundColor: "#f5b0c0",
           calendarBackground: "#ffffff",
           textSectionTitleColor: "#b6c1cd",
           todayTextColor: "#03A9F4",
@@ -109,6 +109,10 @@ const AttendanceScreen = () => {
           textDayFontSize: 16,
           textMonthFontSize: 18,
           textDayHeaderFontSize: 14,
+        }}
+        style={{
+          borderRadius: 20,
+          paddingBottom: 20,
         }}
       />
 
@@ -125,8 +129,8 @@ const AttendanceScreen = () => {
       </View>
 
       {/* 🎉 Upcoming Holidays */}
-      <Text style={styles.sectionTitle}>Upcoming Holidays</Text>
-      {upcomingHolidays.map((item) => (
+      {/* <Text style={styles.sectionTitle}>Upcoming Holidays</Text> */}
+      {/* {upcomingHolidays.map((item) => (
         <View key={item.id} style={styles.holidayCard}>
           <MaterialIcons name={item.icon} size={24} color="#03A9F4" />
           <View style={styles.holidayTextContainer}>
@@ -134,7 +138,7 @@ const AttendanceScreen = () => {
             <Text style={styles.holidayDate}>{item.date}</Text>
           </View>
         </View>
-      ))}
+      ))} */}
     </ScrollView>
   );
 };
@@ -145,7 +149,8 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingBottom: 100,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5b0c0",
+    height: "100%"
   },
   header: {
     fontSize: 22,

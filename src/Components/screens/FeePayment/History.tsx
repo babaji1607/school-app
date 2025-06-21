@@ -165,9 +165,9 @@ const FeePaymentScreen = () => {
       contentContainerStyle={paymentData.length === 0 ? styles.emptyListContainer : styles.listContainer}
       showsVerticalScrollIndicator={false}
     >
-      <View style={{ alignItems: 'center', padding: 3 }}>
+      {/* <View style={{ alignItems: 'center', padding: 3 }}>
         <Text style={{ fontSize: 11, color: '#708090' }}>Pull down to refresh</Text>
-      </View>
+      </View> */}
 
       {paymentData.length === 0 ? (
         renderEmptyOrErrorState()

@@ -217,7 +217,7 @@ export default AttendanceLookout
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F5F5F7',
+        backgroundColor: '#f5b0c0',
     },
     scrollView: {
         flex: 1,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     backButton: {
-        backgroundColor: '#4A90E2',
+        backgroundColor: '#F72C5B',
         borderRadius: 8,
         paddingVertical: 14,
         alignItems: 'center',

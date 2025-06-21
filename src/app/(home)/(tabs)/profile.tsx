@@ -100,9 +100,9 @@ const ProfileScreen = () => {
                             source={{ uri: 'https://avatar.iran.liara.run/public/48' }}
                             style={styles.profileImage}
                         />
-                        <TouchableOpacity style={styles.editButton}>
+                        {/* <TouchableOpacity style={styles.editButton}>
                             <MaterialIcons name="edit" size={16} color="#fff" />
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
 
                     <Text style={styles.profileName}>{userInfo?.name}</Text>
@@ -127,7 +127,7 @@ const ProfileScreen = () => {
                             <Text style={styles.infoLabel}>Age</Text>
                             <Text style={styles.infoValue}>{userInfo?.age}</Text>
                         </View>
-                        
+
                         <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>Username</Text>
                             <Text style={styles.infoValue}>{userInfo?.user?.email}</Text>
@@ -183,7 +183,7 @@ const ProfileScreen = () => {
 
                     {/* <SignOutButton></SignOutButton> */}
                     <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-                        <MaterialIcons name="logout" size={18} color="red" />
+                        <MaterialIcons name="logout" size={18} color="white" />
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
@@ -195,7 +195,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: '#f5b0c0',
     },
     header: {
         flexDirection: 'row',
@@ -326,11 +326,14 @@ const styles = StyleSheet.create({
         marginTop: 8,
         marginBottom: 24,
         padding: 16,
+        backgroundColor: '#F72C5B',
+        borderRadius: 20,
     },
     logoutText: {
-        color: 'red',
+        color: '#fff',
         marginLeft: 8,
         fontSize: 16,
+        fontWeight: 'bold'
     },
 });
 

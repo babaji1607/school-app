@@ -338,7 +338,7 @@ export default AttendancePage
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#f5b0c0',
   },
   scrollView: {
     flex: 1,
@@ -478,12 +478,12 @@ const styles = StyleSheet.create({
     width: 22,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: '#4A90E2',
+    borderColor: '#F72C5B',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#F72C5B',
   },
   checkmark: {
     color: '#FFFFFF',
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   actionButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#F72C5B',
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 15,
@@ -512,9 +512,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButtonSecondary: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#f5b0c0',
     borderWidth: 1,
-    borderColor: '#4A90E2',
+    borderColor: 'white',
     marginRight: 0,
     marginLeft: 8,
   },
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   actionButtonTextSecondary: {
-    color: '#4A90E2',
+    color: 'white',
     fontWeight: '600',
     fontSize: 14,
   },
@@ -536,11 +536,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '',
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    // borderTopWidth: 1,
+    // borderTopColor: '#E0E0E0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   submitButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#F72C5B',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
   },
   confirmButton: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#F72C5B',
   },
   cancelButtonText: {
     color: '#555555',

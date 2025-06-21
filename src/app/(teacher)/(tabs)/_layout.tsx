@@ -6,13 +6,13 @@ import { useRouter } from 'expo-router'
 const TabRoot = () => {
     const router = useRouter()
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: '#f5b0c0' }}>
             {/* Profile FAB - fixed position on all screens */}
             <TouchableOpacity
                 style={{
-                    backgroundColor: '#007AFF',
-                    width: 30,
-                    height: 30,
+                    backgroundColor: '#F72C5B',
+                    width: 40,
+                    height: 40,
                     // display: 'hidden',
                     borderRadius: 28,
                     position: 'absolute',
@@ -30,16 +30,26 @@ const TabRoot = () => {
                 onPress={() => {
                     router.push('/(teacher)/(tabs)/profile')
                 }}>
-                <Ionicons name='person-outline' color='#ffffff' size={18} />
+                <Ionicons name='person-outline' color='#ffffff' size={25} />
             </TouchableOpacity>
 
             <Tabs initialRouteName='home' screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    height: 60,
-                    paddingTop: 5
+                    height: 85,
+                    paddingTop: 10,
+                    borderTopEndRadius: 25,
+                    borderTopStartRadius: 25,
                 },
-                tabBarActiveTintColor: '#007AFF',
+                tabBarLabelStyle: {
+                    marginTop: 5, // space between icon and label
+                    fontSize: 12, // optional: control label size
+                },
+                tabBarIconStyle: {
+                    marginTop: 5,
+                    marginBottom: 1, // optional: push icon down a bit
+                },
+                tabBarActiveTintColor: '#F72C5B',
                 tabBarInactiveTintColor: '#888',
             }}>
                 <Tabs.Screen

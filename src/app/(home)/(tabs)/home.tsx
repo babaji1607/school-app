@@ -7,6 +7,8 @@ import { useSharedValue } from "react-native-reanimated";
 import Carousel from "react-native-reanimated-carousel";
 import { getActiveEvents } from '../../../api/Events';
 import { TokenStore } from '../../../../TokenStore';
+import { LinearGradient } from 'react-native-linear-gradient';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -80,6 +82,9 @@ export default function HomePage() {
     const [events, setEvents] = useState([])
 
 
+    const router = useRouter()
+
+
     const scrollOffsetValue = useSharedValue(0);
 
     const fadeAnim = useRef(new Animated.Value(0)).current; // For fade-in animations
@@ -142,21 +147,34 @@ export default function HomePage() {
     // Event Card Component
     const EventCard = ({ event, fadeAnim }) => (
         <Animated.View style={[styles.eventCard, { opacity: fadeAnim }]}>
+
+            {/* Linear Gradient Overlay - Much cleaner! */}
+            <LinearGradient
+                colors={['transparent', 'transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+                locations={[0, 0.4, 0.55, 1]}
+                style={styles.gradientOverlay}
+            />
             <Image source={{ uri: event.imageUrl }} style={styles.eventImage} />
+
+            {/* Content Container */}
             <View style={styles.eventContentWrapper}>
-                <View style={styles.eventContent}>
-                    <Text style={styles.eventTitle}>{event.title}</Text>
-                    <Text style={styles.eventDate}>{event.event_date.split('T')[0]}</Text>
-                    <Text
-                        style={styles.eventDescription}
-                        numberOfLines={3}
-                        ellipsizeMode="tail"
-                    >
-                        {event.description}
-                    </Text>
-                </View>
-                <TouchableOpacity style={styles.learnMoreButton}>
-                    <Text style={styles.learnMoreText}>Learn more</Text>
+                {/* <View style={styles.eventContent}>
+                </View> */}
+                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text
+                    style={styles.eventDescription}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                >
+                    {event.description}
+                </Text>
+                <TouchableOpacity onPress={() => {
+                    router.push({
+                        pathname: '/(home)/EventDetail',
+                        params: { event: JSON.stringify(event) }
+                    })
+                }} style={styles.readMoreButton}>
+                    <Text style={styles.readMoreText}>Read More</Text>
                 </TouchableOpacity>
             </View>
         </Animated.View>
@@ -191,6 +209,11 @@ export default function HomePage() {
                                     source={{ uri: item.imageUrl }}
                                     style={styles.carouselImage}
                                     resizeMode="cover"
+                                />
+                                <LinearGradient
+                                    colors={['transparent', 'transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.8)']}
+                                    locations={[0, 0.4, 0.55, 1]}
+                                    style={styles.gradientOverlay}
                                 />
                                 <View style={styles.carouselContent}>
                                     <Text style={styles.carouselTitle}>{item.title}</Text>
@@ -233,7 +256,7 @@ export default function HomePage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#f5b0c0',
         // paddingBottom: 20,
     },
     carouselItem: {
@@ -257,9 +280,9 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         padding: 20,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderBottomLeftRadius: 15,
-        borderBottomRightRadius: 15,
+        // backgroundColor: 'rgba(0,0,0,0.5)',
+        // borderBottomLeftRadius: 15,
+        // borderBottomRightRadius: 15,
     },
     carouselTitle: {
         fontFamily: 'Inter-Bold',
@@ -268,7 +291,8 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: -1, height: 1 },
-        textShadowRadius: 10
+        textShadowRadius: 10,
+        zIndex: 2
     },
     carouselDescription: {
         fontFamily: 'Inter-Regular',
@@ -276,7 +300,8 @@ const styles = StyleSheet.create({
         color: '#ffffff',
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: -1, height: 1 },
-        textShadowRadius: 10
+        textShadowRadius: 10,
+        zIndex: 2
     },
     quickAccess: {
         padding: 16,
@@ -317,7 +342,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     eventCard: {
-        backgroundColor: '#ffffff',
         borderRadius: 12,
         overflow: 'hidden',
         elevation: 2,
@@ -329,21 +353,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
         width: '48%', // Slightly less than 50% to allow for spacing
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
+        borderColor: 'white',
         height: 320, // Fixed height for consistent sizing
     },
     eventImage: {
         width: '100%',
-        height: 120,
+        height: '100%',
         resizeMode: 'cover',
+        zIndex: 0,
+        position: 'absolute',
+
     },
     eventContentWrapper: {
         flex: 1,
         padding: 12,
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
+        gap: 10
     },
     eventContent: {
         flex: 1,
@@ -351,8 +378,9 @@ const styles = StyleSheet.create({
     eventTitle: {
         fontFamily: 'Inter-Bold',
         fontSize: 16,
-        color: '#1e293b',
+        color: '#fff',
         marginBottom: 4,
+        zIndex: 3
     },
     eventDate: {
         fontFamily: 'Inter-SemiBold',
@@ -363,21 +391,37 @@ const styles = StyleSheet.create({
     eventDescription: {
         fontFamily: 'Inter-Regular',
         fontSize: 12,
-        color: '#64748b',
+        color: '#fff',
         marginBottom: 4,
         lineHeight: 18,
+        zIndex: 3
     },
-    learnMoreButton: {
-        backgroundColor: '#3b82f6',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 20,
+    readMoreButton: {
+        backgroundColor: '#ffffff',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
         alignItems: 'center',
-        marginTop: 8,
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 4,
+        zIndex: 2
     },
-    learnMoreText: {
+    readMoreText: {
         fontFamily: 'Inter-SemiBold',
-        fontSize: 12,
-        color: '#ffffff',
+        fontSize: 13,
+        color: '#000000',
+        textAlign: 'center',
+    },
+    gradientOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1,
     },
 });

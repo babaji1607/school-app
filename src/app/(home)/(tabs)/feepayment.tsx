@@ -19,7 +19,7 @@ export default FeePayment;
 const styles = StyleSheet.create({
     container: {
         padding: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#f5b0c0',
     },
     separator: {
         height: 24,

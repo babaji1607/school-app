@@ -137,7 +137,7 @@ export default AttendanceScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5b0c0",
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   attendanceButton: {
-    backgroundColor: "#03A9F4",
+    backgroundColor: "#F72C5B",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

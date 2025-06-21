@@ -1,77 +1,255 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ScrollView, Image } from 'react-native';
 import { Feather, FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { fetchNotificationById, fetchNotificationsByType } from '../../../api/Notifications';
+import { TokenStore } from '../../../../TokenStore';
+import { PRIMARY_COLOR } from '../../../../utils';
 
 export default function NotificationsScreen() {
     const [refreshing, setRefreshing] = useState(false);
-    const [notifications, setNotifications] = useState([
-        {
-            id: '1',
-            type: 'alert',
-            title: 'Notification Alert!',
-            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
-            time: '5 mins ago',
-            iconType: 'alert',
-            hasAction: false
-        },
-        {
-            id: '2',
-            type: 'notification',
-            title: 'Notification Alert!',
-            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
-            time: 'Sunday 9/3/2025',
-            iconType: 'notification',
-            hasAction: false
-        },
-        {
-            id: '3',
-            type: 'live',
-            title: 'Live Class Alert!',
-            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys sfsd dfssdf sdf f sdfsfdsfds fsd sdfsdfsfsdfs sdfssdfsdf',
-            time: '1 week ago',
-            iconType: 'live',
-            hasAction: true,
-            actionType: 'join',
-            actionText: 'Join'
-        },
-        {
-            id: '4',
-            type: 'payment',
-            title: 'Fee Payment due alert',
-            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
-            time: '',
-            iconType: 'payment',
-            hasAction: true,
-            actionType: 'payment',
-            actionText: 'Pay Fee'
-        },
-        {
-            id: '5',
-            type: 'notification',
-            title: 'Notification Alert!',
-            description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
-            time: 'Sunday 9/3/2025',
-            iconType: 'notification',
-            hasAction: false
-        },
-    ]);
+    const [activeTab, setActiveTab] = useState('Global');
+    const [token, setToken] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    // Initialize with empty arrays instead of sample data
+    const [globalNotifications, setGlobalNotifications] = useState([]);
+    const [studentNotifications, setStudentNotifications] = useState([]);
+    const [classNotifications, setClassNotifications] = useState([]);
+    const [personalNotifications, setPersonalNotifications] = useState([]);
+
+    const tabs = [
+        { key: 'Global', label: 'Global' },
+        { key: 'Students', label: 'Students' },
+        { key: 'Class', label: 'Class' },
+        { key: 'Personal', label: 'Personal' },
+    ];
+
+    // Helper function to transform server notification to UI format
+    const transformNotification = (serverNotification) => {
+        return {
+            id: serverNotification.id,
+            type: determineNotificationType(serverNotification.title, serverNotification.message),
+            title: serverNotification.title,
+            description: serverNotification.message,
+            time: formatTime(serverNotification.created_at),
+            iconType: determineIconType(serverNotification.title, serverNotification.message),
+            hasAction: determineHasAction(serverNotification.title, serverNotification.message),
+            actionType: determineActionType(serverNotification.title, serverNotification.message),
+            actionText: determineActionText(serverNotification.title, serverNotification.message),
+            isRead: serverNotification.is_read,
+            recipientType: serverNotification.recipient_type,
+            recipientId: serverNotification.recipient_id
+        };
+    };
+
+    // Helper function to determine notification type based on content
+    const determineNotificationType = (title, message) => {
+        const content = (title + ' ' + message).toLowerCase();
+        if (content.includes('payment') || content.includes('fee')) return 'payment';
+        if (content.includes('live') || content.includes('class starting')) return 'live';
+        if (content.includes('alert') || content.includes('urgent') || content.includes('important')) return 'alert';
+        return 'notification';
+    };
+
+    // Helper function to determine icon type
+    const determineIconType = (title, message) => {
+        const content = (title + ' ' + message).toLowerCase();
+        if (content.includes('payment') || content.includes('fee')) return 'payment';
+        if (content.includes('live') || content.includes('video') || content.includes('class starting')) return 'live';
+        if (content.includes('alert') || content.includes('urgent') || content.includes('maintenance')) return 'alert';
+        return 'notification';
+    };
+
+    // Helper function to determine if notification has action
+    const determineHasAction = (title, message) => {
+        const content = (title + ' ' + message).toLowerCase();
+        return content.includes('payment') || content.includes('fee') || content.includes('join') || content.includes('live class');
+    };
+
+    // Helper function to determine action type
+    const determineActionType = (title, message) => {
+        const content = (title + ' ' + message).toLowerCase();
+        if (content.includes('payment') || content.includes('fee')) return 'payment';
+        if (content.includes('join') || content.includes('live class')) return 'join';
+        return null;
+    };
+
+    // Helper function to determine action text
+    const determineActionText = (title, message) => {
+        const content = (title + ' ' + message).toLowerCase();
+        if (content.includes('payment') || content.includes('fee')) return 'Pay Fee';
+        if (content.includes('join') || content.includes('live class')) return 'Join';
+        return null;
+    };
+
+    // Helper function to format time
+    const formatTime = (dateString) => {
+        const now = new Date();
+        const notificationDate = new Date(dateString);
+        const diffInMs = now - notificationDate;
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        const diffInDays = Math.floor(diffInHours / 24);
+
+        if (diffInMinutes < 1) return 'Just now';
+        if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
+        if (diffInHours < 24) return `${diffInHours} hours ago`;
+        if (diffInDays === 1) return 'Yesterday';
+        return `${diffInDays} days ago`;
+    };
+
+    const getCurrentNotifications = () => {
+        switch (activeTab) {
+            case 'Global':
+                return globalNotifications;
+            case 'Students':
+                return studentNotifications;
+            case 'Class':
+                return classNotifications;
+            case 'Personal':
+                return personalNotifications;
+            default:
+                return globalNotifications;
+        }
+    };
+
+    const setCurrentNotifications = (notifications) => {
+        switch (activeTab) {
+            case 'Global':
+                setGlobalNotifications(notifications);
+                break;
+            case 'Students':
+                setStudentNotifications(notifications);
+                break;
+            case 'Class':
+                setClassNotifications(notifications);
+                break;
+            case 'Personal':
+                setPersonalNotifications(notifications);
+                break;
+        }
+    };
 
     const onRefresh = () => {
         setRefreshing(true);
-        setTimeout(() => {
-            const newNotification = {
-                id: String(Date.now()),
-                type: 'alert',
-                title: 'New Notification Alert!',
-                description: 'Lorem ipsum dolor sit amet de vula fibjobj olkwpcifecjfys ludksjfjfjifjsadfhsadfjsefhsadfjeadfhsjdfjhsdjsedfjwed',
-                time: 'Just now',
-                iconType: 'alert',
-                hasAction: false
-            };
+        fetchNotificationsForTab(activeTab);
+    };
 
-            setNotifications([newNotification, ...notifications]);
+    const fetchNotificationsForTab = (tabKey) => {
+        if (!token) return;
+
+        switch (tabKey) {
+            case 'Global':
+                fetchGlobalNotifications(token);
+                break;
+            case 'Students':
+                fetchStudentNotifications(token);
+                break;
+            case 'Class':
+                fetchClassNotifications(token);
+                break;
+            case 'Personal':
+                fetchPersonalNotifications(token);
+                break;
+        }
+    };
+
+    // API call functions
+    const fetchGlobalNotifications = (token) => {
+        setLoading(true);
+        fetchNotificationsByType('global', token, (data) => {
+            console.log('Successfully fetched global notifications:', data);
+            const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
+            setGlobalNotifications(transformedNotifications);
+            setLoading(false);
             setRefreshing(false);
-        }, 1500);
+        }, (error) => {
+            console.log("Error fetching global notifications:", error);
+            setLoading(false);
+            setRefreshing(false);
+        });
+    };
+
+    const fetchStudentNotifications = (token) => {
+        setLoading(true);
+        fetchNotificationsByType('student', token, (data) => {
+            console.log('Successfully fetched student notifications:', data);
+            const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
+            setStudentNotifications(transformedNotifications);
+            setLoading(false);
+            setRefreshing(false);
+        }, (error) => {
+            console.log("Error fetching student notifications:", error);
+            setLoading(false);
+            setRefreshing(false);
+        });
+    };
+
+    const fetchClassNotifications = async (token) => {
+        setLoading(true);
+        try {
+            let userInfo = await TokenStore.getUserInfo();
+            let className = userInfo?.class_id;
+            console.log('Fetching class notifications for:', className);
+
+            if (className) {
+                fetchNotificationsByType(className, token, (data) => {
+                    console.log('Successfully fetched class notifications:', data);
+                    const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
+                    setClassNotifications(transformedNotifications);
+                    setLoading(false);
+                    setRefreshing(false);
+                }, (error) => {
+                    console.log("Error fetching class notifications:", error);
+                    setLoading(false);
+                    setRefreshing(false);
+                });
+            } else {
+                console.log("No class_id found in user info");
+                setLoading(false);
+                setRefreshing(false);
+            }
+        } catch (error) {
+            console.log("Error getting user info:", error);
+            setLoading(false);
+            setRefreshing(false);
+        }
+    };
+
+    const fetchPersonalNotifications = async (token) => {
+        setLoading(true);
+        try {
+            let userInfo = await TokenStore.getUserInfo();
+            let userId = userInfo?.id || userInfo?.user_id;
+            console.log('Fetching personal notifications for user:', userId);
+
+            if (userId) {
+                fetchNotificationById(
+                    userId,
+                    token,
+                    (data) => {
+                        console.log('Successfully fetched class notifications:', data);
+                        const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
+                        setPersonalNotifications(transformedNotifications);
+                        setLoading(false);
+                        setRefreshing(false);
+                    },
+                    (error) => {
+                        console.log("Error fetching class notifications:", error);
+                        setLoading(false);
+                        setRefreshing(false);
+                    }
+                )
+            } else {
+                console.log("No user_id found in user info");
+                setLoading(false);
+                setRefreshing(false);
+            }
+        } catch (error) {
+            console.log("Error getting user info for personal notifications:", error);
+            setLoading(false);
+            setRefreshing(false);
+        }
     };
 
     const renderNotificationIcon = (iconType) => {
@@ -109,6 +287,18 @@ export default function NotificationsScreen() {
         }
     };
 
+    const handleActionPress = (notification) => {
+        console.log('Action pressed for notification:', notification.id);
+        // Add your action handling logic here
+        if (notification.actionType === 'payment') {
+            // Handle payment action
+            console.log('Opening payment flow');
+        } else if (notification.actionType === 'join') {
+            // Handle join class action
+            console.log('Joining class');
+        }
+    };
+
     const renderActionButton = (notification) => {
         if (!notification.hasAction) return null;
 
@@ -124,7 +314,10 @@ export default function NotificationsScreen() {
         }
 
         return (
-            <TouchableOpacity style={buttonStyle}>
+            <TouchableOpacity
+                style={buttonStyle}
+                onPress={() => handleActionPress(notification)}
+            >
                 <Text style={[styles.actionButtonText, { color: textColor }]}>
                     {notification.actionText}
                 </Text>
@@ -132,12 +325,75 @@ export default function NotificationsScreen() {
         );
     };
 
+    const renderTabBar = () => {
+        return (
+            <View style={styles.tabBar}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.tabContainer}
+                >
+                    {tabs.map((tab) => (
+                        <TouchableOpacity
+                            key={tab.key}
+                            style={[
+                                styles.tab,
+                                activeTab === tab.key && styles.activeTab
+                            ]}
+                            onPress={() => {
+                                setActiveTab(tab.key);
+                                fetchNotificationsForTab(tab.key);
+                            }}
+                        >
+                            <Text
+                                style={[
+                                    styles.tabText,
+                                    activeTab === tab.key && styles.activeTabText
+                                ]}
+                            >
+                                {tab.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+        );
+    };
+
+    const currentNotifications = getCurrentNotifications();
+
+    useEffect(() => {
+        const getToken = async () => {
+            try {
+                const token = await TokenStore.getToken();
+                setToken(token);
+                if (token) {
+                    // Fetch notifications for the active tab when token is available
+                    fetchNotificationsForTab(activeTab);
+                }
+            } catch (error) {
+                console.log("Error getting token:", error);
+            }
+        };
+        getToken();
+    }, []);
+
+    // Fetch notifications when tab changes
+    useEffect(() => {
+        if (token && activeTab) {
+            fetchNotificationsForTab(activeTab);
+        }
+    }, [activeTab, token]);
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar backgroundColor="#fff" barStyle="dark-content" />
             <View style={styles.header}>
                 <Text style={styles.headerText}>Notifications</Text>
             </View>
+
+            {renderTabBar()}
+
             <ScrollView
                 contentContainerStyle={styles.scrollContainer}
                 refreshControl={
@@ -145,25 +401,43 @@ export default function NotificationsScreen() {
                 }
             >
                 <View style={styles.notificationList}>
-                    {notifications.map(notification => (
-                        <View key={notification.id} style={styles.notificationCard}>
-                            <View style={styles.notificationContent}>
-                                {renderNotificationIcon(notification.iconType)}
-                                <View style={styles.textContainer}>
-                                    <View style={styles.titleRow}>
-                                        <Text style={styles.title}>{notification.title}</Text>
-                                        {notification.time ? (
-                                            <Text style={styles.time}>{notification.time}</Text>
-                                        ) : null}
-                                    </View>
-                                    <Text style={styles.description} numberOfLines={2}>
-                                        {notification.description}
-                                    </Text>
-                                    {renderActionButton(notification)}
-                                </View>
-                            </View>
+                    {loading && currentNotifications.length === 0 ? (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>Loading notifications...</Text>
                         </View>
-                    ))}
+                    ) : currentNotifications.length > 0 ? (
+                        currentNotifications.map(notification => (
+                            <View key={notification.id} style={[
+                                styles.notificationCard,
+                                !notification.isRead && styles.unreadNotification
+                            ]}>
+                                <View style={styles.notificationContent}>
+                                    {renderNotificationIcon(notification.iconType)}
+                                    <View style={styles.textContainer}>
+                                        <View style={styles.titleRow}>
+                                            <Text style={styles.title}>{notification.title}</Text>
+                                            {notification.time ? (
+                                                <Text style={styles.time}>{notification.time}</Text>
+                                            ) : null}
+                                        </View>
+                                        <Text style={styles.description} numberOfLines={2}>
+                                            {notification.description}
+                                        </Text>
+                                        {renderActionButton(notification)}
+                                    </View>
+                                </View>
+                                {!notification.isRead && (
+                                    <View style={styles.unreadIndicator} />
+                                )}
+                            </View>
+                        ))
+                    ) : (
+                        <View style={styles.emptyContainer}>
+                            <Feather name="bell-off" size={48} color="#ccc" />
+                            <Text style={styles.emptyText}>No notifications in {activeTab}</Text>
+                            <Text style={styles.emptySubText}>Pull down to refresh</Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -173,7 +447,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f5b0c0',
     },
     header: {
         paddingVertical: 16,
@@ -187,6 +461,36 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
+    },
+    tabBar: {
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingVertical: 8,
+    },
+    tabContainer: {
+        paddingHorizontal: 16,
+    },
+    tab: {
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        marginRight: 8,
+        borderRadius: 20,
+        backgroundColor: '#f8f9fa',
+        minWidth: 80,
+        alignItems: 'center',
+    },
+    activeTab: {
+        backgroundColor: PRIMARY_COLOR,
+    },
+    tabText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#666',
+    },
+    activeTabText: {
+        color: '#fff',
+        fontWeight: '600',
     },
     scrollContainer: {
         flexGrow: 1,
@@ -204,6 +508,11 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 2,
         elevation: 2,
+        position: 'relative',
+    },
+    unreadNotification: {
+        borderLeftWidth: 4,
+        borderLeftColor: PRIMARY_COLOR,
     },
     notificationContent: {
         flexDirection: 'row',
@@ -252,5 +561,31 @@ const styles = StyleSheet.create({
     actionButtonText: {
         fontSize: 13,
         fontWeight: '500',
+    },
+    unreadIndicator: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#3498DB',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 60,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#666',
+        marginTop: 16,
+        fontWeight: '500',
+    },
+    emptySubText: {
+        fontSize: 14,
+        color: '#999',
+        marginTop: 4,
     },
 });

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, StatusBar, Refr
 import { Feather, FontAwesome5, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { fetchNotificationById, fetchNotificationsByType } from '../../../api/Notifications';
 import { TokenStore } from '../../../../TokenStore';
+import { PRIMARY_COLOR } from '../../../../utils';
 
 export default function NotificationsScreen() {
     const [refreshing, setRefreshing] = useState(false);
@@ -446,7 +447,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#f5b0c0',
     },
     header: {
         paddingVertical: 16,
@@ -480,7 +481,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     activeTab: {
-        backgroundColor: '#3498DB',
+        backgroundColor: PRIMARY_COLOR,
     },
     tabText: {
         fontSize: 14,
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
     },
     unreadNotification: {
         borderLeftWidth: 4,
-        borderLeftColor: '#3498DB',
+        borderLeftColor: PRIMARY_COLOR,
     },
     notificationContent: {
         flexDirection: 'row',
