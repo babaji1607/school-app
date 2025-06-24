@@ -38,8 +38,18 @@ export default function NotificationsScreen() {
             actionText: determineActionText(serverNotification.title, serverNotification.message),
             isRead: serverNotification.is_read,
             recipientType: serverNotification.recipient_type,
-            recipientId: serverNotification.recipient_id
+            recipientId: serverNotification.recipient_id,
+            created_at: serverNotification.created_at // Keep original timestamp for sorting
         };
+    };
+
+    // Helper function to sort notifications by created_at (newest first)
+    const sortNotificationsByTime = (notifications) => {
+        return notifications.sort((a, b) => {
+            const dateA = new Date(a.created_at);
+            const dateB = new Date(b.created_at);
+            return dateB - dateA; // Sort in descending order (newest first)
+        });
     };
 
     // Helper function to determine notification type based on content
@@ -82,20 +92,49 @@ export default function NotificationsScreen() {
         return null;
     };
 
-    // Helper function to format time
+    // Helper function to format time using day-based format
     const formatTime = (dateString) => {
-        const now = new Date();
-        const notificationDate = new Date(dateString);
-        const diffInMs = now - notificationDate;
-        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-        const diffInHours = Math.floor(diffInMinutes / 60);
-        const diffInDays = Math.floor(diffInHours / 24);
+        if (!dateString) return '';
 
-        if (diffInMinutes < 1) return 'Just now';
-        if (diffInMinutes < 60) return `${diffInMinutes} mins ago`;
-        if (diffInHours < 24) return `${diffInHours} hours ago`;
-        if (diffInDays === 1) return 'Yesterday';
-        return `${diffInDays} days ago`;
+        try {
+            const now = new Date();
+            const notificationDate = new Date(dateString);
+
+            // Check if the date is valid
+            if (isNaN(notificationDate.getTime())) {
+                return 'Invalid date';
+            }
+
+            // Set both dates to start of day for accurate day comparison
+            const nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const notifDate = new Date(notificationDate.getFullYear(), notificationDate.getMonth(), notificationDate.getDate());
+
+            const diffInMs = nowDate.getTime() - notifDate.getTime();
+            const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+            // Handle future dates (in case of server time differences)
+            if (diffInMs < 0) {
+                return 'Today';
+            }
+
+            if (diffInDays === 0) return 'Today';
+            if (diffInDays === 1) return 'Yesterday';
+            if (diffInDays < 7) return `${diffInDays} days ago`;
+            if (diffInDays < 30) {
+                const weeks = Math.floor(diffInDays / 7);
+                return `${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+            }
+            if (diffInDays < 365) {
+                const months = Math.floor(diffInDays / 30);
+                return `${months} month${months !== 1 ? 's' : ''} ago`;
+            }
+
+            const years = Math.floor(diffInDays / 365);
+            return `${years} year${years !== 1 ? 's' : ''} ago`;
+        } catch (error) {
+            console.error('Error formatting time:', error);
+            return 'Unknown time';
+        }
     };
 
     const getCurrentNotifications = () => {
@@ -154,13 +193,14 @@ export default function NotificationsScreen() {
         }
     };
 
-    // API call functions
+    // API call functions with proper sorting
     const fetchGlobalNotifications = (token) => {
         setLoading(true);
         fetchNotificationsByType('global', token, (data) => {
             console.log('Successfully fetched global notifications:', data);
             const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
-            setGlobalNotifications(transformedNotifications);
+            const sortedNotifications = sortNotificationsByTime(transformedNotifications);
+            setGlobalNotifications(sortedNotifications);
             setLoading(false);
             setRefreshing(false);
         }, (error) => {
@@ -175,7 +215,8 @@ export default function NotificationsScreen() {
         fetchNotificationsByType('student', token, (data) => {
             console.log('Successfully fetched student notifications:', data);
             const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
-            setStudentNotifications(transformedNotifications);
+            const sortedNotifications = sortNotificationsByTime(transformedNotifications);
+            setStudentNotifications(sortedNotifications);
             setLoading(false);
             setRefreshing(false);
         }, (error) => {
@@ -196,7 +237,8 @@ export default function NotificationsScreen() {
                 fetchNotificationsByType(className, token, (data) => {
                     console.log('Successfully fetched class notifications:', data);
                     const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
-                    setClassNotifications(transformedNotifications);
+                    const sortedNotifications = sortNotificationsByTime(transformedNotifications);
+                    setClassNotifications(sortedNotifications);
                     setLoading(false);
                     setRefreshing(false);
                 }, (error) => {
@@ -228,14 +270,15 @@ export default function NotificationsScreen() {
                     userId,
                     token,
                     (data) => {
-                        console.log('Successfully fetched class notifications:', data);
+                        console.log('Successfully fetched personal notifications:', data);
                         const transformedNotifications = Array.isArray(data) ? data.map(transformNotification) : [];
-                        setPersonalNotifications(transformedNotifications);
+                        const sortedNotifications = sortNotificationsByTime(transformedNotifications);
+                        setPersonalNotifications(sortedNotifications);
                         setLoading(false);
                         setRefreshing(false);
                     },
                     (error) => {
-                        console.log("Error fetching class notifications:", error);
+                        console.log("Error fetching personal notifications:", error);
                         setLoading(false);
                         setRefreshing(false);
                     }
@@ -426,9 +469,9 @@ export default function NotificationsScreen() {
                                         {renderActionButton(notification)}
                                     </View>
                                 </View>
-                                {!notification.isRead && (
+                                {/* {!notification.isRead && (
                                     <View style={styles.unreadIndicator} />
-                                )}
+                                )} */}
                             </View>
                         ))
                     ) : (

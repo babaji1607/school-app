@@ -55,7 +55,7 @@ export default function LoginScreen({ navigation }) {
     const notification_token = await TokenStore.getNotificationToken();
     const token = await TokenStore.getToken();
     const updatedData = { ...studentData, notification_token };
-
+    console.log(updatedData)
     await updateStudent(
       token,
       updatedData.id,
@@ -73,48 +73,80 @@ export default function LoginScreen({ navigation }) {
 
     setIsLoading(true);
 
-    ['student_global', 'teacher_global'].forEach(async (topic) => {
-      await messaging().unsubscribeFromTopic(topic);
-    });
-
     try {
-      const response = await adminLogin(
-        userID,
-        password,
-        async (data) => {
-          if (data && data.access_token) {
-            TokenStore.setToken(data.access_token);
+      // Unsubscribe from topics first
+      try {
+        await Promise.all([
+          messaging().unsubscribeFromTopic('student'),
+          messaging().unsubscribeFromTopic('teacher')
+        ]);
+      } catch (error) {
+        console.log('Topic unsubscription error:', error);
+      }
 
-            if (data.teacher_profile) {
-              TokenStore.setUserInfo(data.teacher_profile);
-            } else if (data.student_profile) {
-              TokenStore.setUserInfo(data.student_profile);
-              messaging().subscribeToTopic(data.student_profile.class_id);
+      // Wrap adminLogin in a Promise to handle the callback properly
+      const loginResult = await new Promise((resolve, reject) => {
+        adminLogin(
+          userID,
+          password,
+          (data) => resolve({ success: true, data }),
+          (error) => resolve({ success: false, error })
+        );
+      });
+
+      if (!loginResult.success) {
+        Alert.alert(
+          'Login Failed',
+          'Invalid credentials or server error. Please try again.'
+        );
+        return;
+      }
+
+      const { data } = loginResult;
+
+      if (data && data.access_token) {
+        // Store token and user info with proper await
+        await TokenStore.setToken(data.access_token);
+
+        let userProfile = null;
+        if (data.teacher_profile) {
+          userProfile = data.teacher_profile;
+          await TokenStore.setUserInfo(data.teacher_profile);
+        } else if (data.student_profile) {
+          userProfile = data.student_profile;
+          await TokenStore.setUserInfo(data.student_profile);
+        }
+
+        // Handle Firebase messaging subscriptions
+        try {
+          await messaging().subscribeToTopic('global');
+
+          if (data.role === 'teacher') {
+            await messaging().subscribeToTopic('teacher');
+          } else if (data.role === 'student') {
+            await messaging().subscribeToTopic('student');
+            if (data.student_profile?.class_id) {
+              await messaging().subscribeToTopic(data.student_profile.class_id);
+            }
+            // Update student device token
+            if (data.student_profile) {
               updateStudentDeviceToken(data.student_profile);
             }
-
-            await messaging().subscribeToTopic('global');
-
-            if (data.role === 'teacher') {
-              await messaging().subscribeToTopic('teacher');
-            } else {
-              await messaging().subscribeToTopic('student');
-            }
-
-            navigateBasedOnRole(data.role);
           }
-        },
-        () => {
-          Alert.alert(
-            'Login Failed',
-            'Invalid credentials or server error. Please try again.'
-          );
+        } catch (messagingError) {
+          console.log('Messaging subscription error:', messagingError);
+          // Don't block login for messaging errors
         }
-      );
 
-      if (!response.success) {
-        Alert.alert('Login Error', response.message);
+        // Add a small delay to ensure all async operations complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Navigate based on role
+        navigateBasedOnRole(data.role);
+      } else {
+        Alert.alert('Login Error', 'Invalid response from server');
       }
+
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Login Error', 'An unexpected error occurred. Please try again.');

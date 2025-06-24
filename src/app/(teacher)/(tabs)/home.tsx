@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable, Dimensions, Animated, TouchableOpacity } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Book, Calendar, LibraryBig, MessageCircle, Newspaper } from 'lucide-react-native';
+import { Book, Calendar, LibraryBig, MessageCircle, Newspaper, ArrowRight } from 'lucide-react-native';
 import { useSharedValue } from "react-native-reanimated";
 import Carousel from "react-native-reanimated-carousel";
 import { getActiveEvents } from '../../../api/Events';
@@ -12,65 +12,6 @@ import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-// const newsData = [
-//     {
-//         id: '1',
-//         image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop',
-//         title: 'Annual Science Fair Winners Announced',
-//         description: 'Congratulations to all participants in this year\'s Science Fair...'
-//     },
-//     {
-//         id: '2',
-//         image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
-//         title: 'New Sports Complex Opening',
-//         description: 'The state-of-the-art sports facility will be inaugurated next month...'
-//     },
-//     {
-//         id: '3',
-//         image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=800&auto=format&fit=crop',
-//         title: 'Student Achievement Awards',
-//         description: 'Outstanding students recognized for their academic excellence...'
-//     }
-// ];
-
-// const quickAccessItems = [
-//     { id: '1', title: 'Library', icon: LibraryBig },
-//     { id: '2', title: 'Calendar', icon: Calendar },
-//     { id: '3', title: 'Homework', icon: Book },
-//     { id: '4', title: 'Messages', icon: MessageCircle },
-//     { id: '5', title: 'News', icon: Newspaper },
-// ];
-
-// const events = [
-//     {
-//         id: '1',
-//         title: 'Parent-Teacher Meeting',
-//         date: 'March 15, 2024',
-//         image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
-//         description: 'Annual parent-teacher conference to discuss student progress and academic performance'
-//     },
-//     {
-//         id: '2',
-//         title: 'Sports Day',
-//         date: 'March 20, 2024',
-//         image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?q=80&w=800&auto=format&fit=crop',
-//         description: 'Annual sports competition featuring various athletic events and team competitions'
-//     },
-//     {
-//         id: '3',
-//         title: 'Science Exhibition',
-//         date: 'March 25, 2024',
-//         image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop',
-//         description: 'Students showcase their innovative science projects with interactive demonstrations'
-//     },
-//     {
-//         id: '4',
-//         title: 'Art Workshop',
-//         date: 'April 2, 2024',
-//         image: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?q=80&w=800&auto=format&fit=crop',
-//         description: 'Creative arts workshop exploring different mediums and techniques for all students'
-//     },
-// ];
 
 export default function HomePage() {
     const [fontsLoaded] = useFonts({
@@ -79,10 +20,12 @@ export default function HomePage() {
         'Inter-Bold': Inter_700Bold,
     });
 
+
+    const router = useRouter()
+
     const [events, setEvents] = useState([])
 
 
-    const router = useRouter()
 
 
     const scrollOffsetValue = useSharedValue(0);
@@ -170,7 +113,7 @@ export default function HomePage() {
                 </Text>
                 <TouchableOpacity onPress={() => {
                     router.push({
-                        pathname: '/(home)/EventDetail',
+                        pathname: '/(teacher)/EventDetail',
                         params: { event: JSON.stringify(event) }
                     })
                 }} style={styles.readMoreButton}>
@@ -186,11 +129,13 @@ export default function HomePage() {
                 style={{ opacity: fadeAnim, paddingTop: 60, }}
                 showsVerticalScrollIndicator={false}
             >
+                {/* gallary route  */}
                 {/* News Carousel */}
                 <View
                     id="carousel-component"
                     dataSet={{ kind: "basic-layouts", name: "normal" }}
                 >
+
                     <Carousel
                         loop={true}
                         width={width}
@@ -222,6 +167,28 @@ export default function HomePage() {
                             </View>
                         )}
                     />
+                </View>
+                <View style={styles.gallaryBox}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            router.push('/(teacher)/gallary')
+                        }}
+                        style={styles.gallaryButton}>
+                        {/* Gradient Overlay */}
+                        <LinearGradient
+                            colors={['#00d2ff', '#3a7bd5', '#6a11cb']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            locations={[0, 0.5, 1]}
+                            style={StyleSheet.absoluteFillObject} // Covers whole button
+                        />
+
+                        {/* Text Above the Gradient */}
+                        <View style={styles.gallaryContent}>
+                            <Text style={styles.gallaryText}>School Gallery</Text>
+                            <ArrowRight color="white" size={30} />
+                        </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Quick Access Menu */}
@@ -258,6 +225,27 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#f5b0c0',
         // paddingBottom: 20,
+    },
+    gallaryBox: {
+        width: '100%',
+        height: 150,
+        overflow: 'hidden',
+        padding: 15
+    },
+    gallaryButton: {
+        borderRadius: 30,
+        padding: 20,
+        backgroundColor: 'cyan',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        alignContent: 'center',
+        overflow: 'hidden'
+    },
+    gallaryText: {
+        color: 'white',
+        fontSize: 28,
     },
     carouselItem: {
         flex: 1,
@@ -424,4 +412,32 @@ const styles = StyleSheet.create({
         bottom: 0,
         zIndex: 1,
     },
+    // gallaryButton: {
+    //     borderRadius: 30,
+    //     overflow: 'hidden',
+    //     width: '100%',
+    //     height: '100%',
+    //     justifyContent: 'center',
+    //     alignItems: 'center',
+    //     position: 'relative',
+    // },
+
+    gallaryContent: {
+        zIndex: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 20
+    },
+    // gallaryText: {
+    //     color: 'white',
+    //     fontSize: 28,
+    //     fontFamily: 'Inter-Bold',
+    //     textAlign: 'center',
+    //     textShadowColor: 'rgba(0, 0, 0, 0.4)',
+    //     textShadowOffset: { width: 1, height: 1 },
+    //     textShadowRadius: 6,
+    // },
+
 });

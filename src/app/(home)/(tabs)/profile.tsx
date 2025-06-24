@@ -1,46 +1,75 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import {
+    View,
+    Text,
+    Image,
+    TouchableOpacity,
+    StyleSheet,
+    SafeAreaView,
+    ScrollView,
+    Alert,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { TokenStore } from '../../../../TokenStore';
 import { useRouter } from 'expo-router';
-import messaging from '@react-native-firebase/messaging'
+import messaging from '@react-native-firebase/messaging';
 import { getUserInfo } from '../../../api/Auth';
 import { getStudentById } from '../../../api/Students';
 
 const ProfileScreen = () => {
-    // Sample user data (would come from API/state in real app)
-    const [userInfo, setUserInfo] = useState(null)
-    // data schema
+    const [userInfo, setUserInfo] = useState(null);
+    const router = useRouter();
 
-    //    {
-    //   "FatherContact": "string",
-    //   "FatherName": "pandu",
-    //   "MotherContact": "string",
-    //   "MotherName": "kunti",
-    //   "address": "Indraprasth",
-    //   "age": 16,
-    //   "class_id": "5f2d4084-f351-4e43-8e72-c556b387411c",
-    //   "classroom": {
-    //     "id": "5f2d4084-f351-4e43-8e72-c556b387411c",
-    //     "name": "Dhanurvidya",
-    //     "teacher_id": "84d337b9-9f8d-457c-9769-77e567da20f2"
-    //   },
-    //   "contact": "garud",
-    //   "id": "e20ac44a-ad8b-455d-bb0e-f59d573b7366",
-    //   "name": "bheema",
-    //   "notification_token": null,
-    //   "user": {
-    //     "email": "bheema",
-    //     "id": "c8a63fba-4b7d-4cdf-ab39-342776deffc6"
-    //   }
-    // }
+    const showLogoutConfirmation = () => {
+        Alert.alert(
+            'Confirm Logout',
+            'Are you sure you want to logout?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: handleLogout,
+                },
+            ],
+            { cancelable: true }
+        );
+    };
 
+    const handleLogout = async () => {
+        try {
+            TokenStore.clearAll();
+            await messaging().unsubscribeFromTopic('student');
+            console.log('Successfully unsubscribed from student');
+            router.replace('/(auth)/auth');
+        } catch (error) {
+            console.log('Logout error:', error);
+            // Still proceed with logout even if unsubscribe fails
+            router.replace('/(auth)/auth');
+        }
+    };
 
+    const populateData = async () => {
+        try {
+            const Token = await TokenStore.getToken();
+            const student = await TokenStore.getUserInfo();
+            const stid = student.id;
+            const info = await getStudentById(Token, stid);
+            setUserInfo(info);
+        } catch (e) {
+            console.log(e);
+        }
+    };
 
-    const router = useRouter()
+    useEffect(() => {
+        populateData();
+    }, []);
 
-    const renderMenuItem = (iconName, title, badge = null) => (
-        <TouchableOpacity style={styles.menuItem}>
+    const renderMenuItem = (iconName, title, onPress, badge = null) => (
+        <TouchableOpacity style={styles.menuItem} onPress={onPress}>
             <View style={styles.menuIcon}>
                 <MaterialIcons name={iconName} size={22} color="#555" />
             </View>
@@ -53,46 +82,8 @@ const ProfileScreen = () => {
         </TouchableOpacity>
     );
 
-    const handleLogout = async () => {
-        TokenStore.clearAll()
-        await messaging().unsubscribeFromTopic('student')
-        console.log('Successfully unsubscribed from teacher')
-        router.replace('/(auth)/auth')
-    }
-
-
-    const populateData = async () => {
-        try {
-            const Token = await TokenStore.getToken()
-            const student = await TokenStore.getUserInfo()
-            const stid = await student.id
-            console.log({
-                stid,
-                Token
-            })
-            const info = await getStudentById(
-                Token,
-                stid
-            )
-            setUserInfo(info)
-        } catch (e) {
-            console.log(e)
-        }
-    }
-
-
-    useEffect(() => {
-        populateData()
-    }, [])
-
     return (
         <SafeAreaView style={styles.container}>
-            {/* <View style={styles.header}>
-                <TouchableOpacity style={styles.menuButton}>
-                    <MaterialIcons name="menu" size={24} color="#555" />
-                </TouchableOpacity>
-            </View> */}
-
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileContainer}>
                     <View style={styles.profileImageContainer}>
@@ -100,11 +91,7 @@ const ProfileScreen = () => {
                             source={{ uri: 'https://avatar.iran.liara.run/public/48' }}
                             style={styles.profileImage}
                         />
-                        {/* <TouchableOpacity style={styles.editButton}>
-                            <MaterialIcons name="edit" size={16} color="#fff" />
-                        </TouchableOpacity> */}
                     </View>
-
                     <Text style={styles.profileName}>{userInfo?.name}</Text>
                     <Text style={styles.profileRole}>Student</Text>
                 </View>
@@ -113,16 +100,6 @@ const ProfileScreen = () => {
                     <Text style={styles.sectionTitle}>Student Information</Text>
 
                     <View style={styles.infoCard}>
-                        {/* <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>ADM NO.</Text>
-                            <Text style={styles.infoValue}>{userInfo?.admissionNumber}</Text>
-                        </View> */}
-
-                        {/* <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>ROLL NO.</Text>
-                            <Text style={styles.infoValue}>{userInfo?.rollNumber}</Text>
-                        </View> */}
-
                         <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>Age</Text>
                             <Text style={styles.infoValue}>{userInfo?.age}</Text>
@@ -153,11 +130,6 @@ const ProfileScreen = () => {
                             <Text style={styles.infoValue}>{userInfo?.address}</Text>
                         </View>
 
-                        {/* <View style={styles.infoRow}>
-                            <Text style={styles.infoLabel}>DATE OF BIRTH</Text>
-                            <Text style={styles.infoValue}>{userInfo?.dateOfBirth}</Text>
-                        </View> */}
-
                         <View style={styles.infoRow}>
                             <Text style={styles.infoLabel}>FATHER'S NO</Text>
                             <Text style={styles.infoValue}>{userInfo?.FatherContact}</Text>
@@ -169,20 +141,10 @@ const ProfileScreen = () => {
                         </View>
                     </View>
 
-                    {/* {renderMenuItem('person', 'My Profile')} */}
-                    {/* {renderMenuItem('mail', 'Messages', '5')} */}
-                    {/* {renderMenuItem('favorite', 'Favorites')} */}
-                    {/* {renderMenuItem('location-on', 'Location')} */}
-                    {/* {renderMenuItem('settings', 'Settings')} */}
-                    {renderMenuItem('info-outline', 'About')}
+                    {/* {renderMenuItem('photo-library', 'Gallery', () => router.push('/(home)/gallary'))} */}
+                    {/* {renderMenuItem('info-outline', 'About', () => { })} */}
 
-                    {/* <TouchableOpacity style={styles.logoutButton}>
-                        <MaterialIcons name="logout" size={18} color="red" />
-                        <Text style={styles.logoutText}>Logout</Text>
-                    </TouchableOpacity> */}
-
-                    {/* <SignOutButton></SignOutButton> */}
-                    <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                    <TouchableOpacity onPress={showLogoutConfirmation} style={styles.logoutButton}>
                         <MaterialIcons name="logout" size={18} color="white" />
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity>
@@ -196,15 +158,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f5b0c0',
-    },
-    header: {
-        flexDirection: 'row',
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 8,
-    },
-    menuButton: {
-        padding: 8,
     },
     scrollContainer: {
         flexGrow: 1,
@@ -223,17 +176,6 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: 50,
         backgroundColor: '#e0e0e0',
-    },
-    editButton: {
-        position: 'absolute',
-        right: 0,
-        bottom: 0,
-        backgroundColor: '#8a2be2',
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     profileName: {
         fontSize: 20,
@@ -333,7 +275,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         marginLeft: 8,
         fontSize: 16,
-        fontWeight: 'bold'
+        fontWeight: 'bold',
     },
 });
 

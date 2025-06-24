@@ -1,16 +1,28 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
+import { View, ActivityIndicator, Text, Platform } from 'react-native';
 import { Redirect } from 'expo-router';
 import { TokenStore } from '../../../TokenStore';
 import { getUserInfo } from '../../api/Auth';
-import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
 import * as SecureStore from 'expo-secure-store';
+import * as Notifications from 'expo-notifications'
 
 export default function Page() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [hasOnboarded, setHasOnboarded] = useState<boolean | null>(null); // ✅ new state
+
+
+    const requestPermissions = async () => {
+        // Only for Android 13+
+        if (Platform.OS === 'android' && Platform.Version >= 33) {
+            const { status } = await Notifications.requestPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Permission for notifications was denied');
+            }
+        }
+    };
+
 
     useEffect(() => {
         const checkOnboarding = async () => {
@@ -18,7 +30,10 @@ export default function Page() {
             setHasOnboarded(value === 'true');
         };
         checkOnboarding();
+        requestPermissions()
     }, []);
+
+
 
     useEffect(() => {
         if (hasOnboarded === false) return; // wait before checking auth

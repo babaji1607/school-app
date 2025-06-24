@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { 
+    View, 
+    Text, 
+    Image, 
+    TouchableOpacity, 
+    StyleSheet, 
+    SafeAreaView, 
+    ScrollView,
+    Alert
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { TokenStore } from '../../../../TokenStore';
 import { useRouter } from 'expo-router';
@@ -40,8 +49,8 @@ const ProfileScreen = () => {
 
     const router = useRouter()
 
-    const renderMenuItem = (iconName, title, badge = null) => (
-        <TouchableOpacity style={styles.menuItem}>
+    const renderMenuItem = (iconName, title, onPress, badge = null) => (
+        <TouchableOpacity style={styles.menuItem} onPress={onPress}>
             <View style={styles.menuIcon}>
                 <MaterialIcons name={iconName} size={22} color="#555" />
             </View>
@@ -54,11 +63,36 @@ const ProfileScreen = () => {
         </TouchableOpacity>
     );
 
+    const showLogoutConfirmation = () => {
+        Alert.alert(
+            'Confirm Logout',
+            'Are you sure you want to logout?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: handleLogout,
+                },
+            ],
+            { cancelable: true }
+        );
+    };
+
     const handleLogout = async () => {
-        TokenStore.clearAll()
-        await messaging().unsubscribeFromTopic('student')
-        console.log('Successfully unsubscribed from teacher')
-        router.replace('/(auth)/auth')
+        try {
+            TokenStore.clearAll()
+            await messaging().unsubscribeFromTopic('teacher')
+            console.log('Successfully unsubscribed from teacher')
+            router.replace('/(auth)/auth')
+        } catch (error) {
+            console.log('Logout error:', error)
+            // Still proceed with logout even if unsubscribe fails
+            router.replace('/(auth)/auth')
+        }
     }
 
 
@@ -114,11 +148,11 @@ const ProfileScreen = () => {
                     </View>
 
                     <Text style={styles.profileName}>{userInfo?.name}</Text>
-                    <Text style={styles.profileRole}>Student</Text>
+                    <Text style={styles.profileRole}>Teacher</Text>
                 </View>
 
                 <View style={styles.detailsContainer}>
-                    <Text style={styles.sectionTitle}>Student Information</Text>
+                    <Text style={styles.sectionTitle}>Teacher Information</Text>
 
                     <View style={styles.infoCard}>
                         {/* <View style={styles.infoRow}>
@@ -158,15 +192,15 @@ const ProfileScreen = () => {
                     {/* {renderMenuItem('favorite', 'Favorites')} */}
                     {/* {renderMenuItem('location-on', 'Location')} */}
                     {/* {renderMenuItem('settings', 'Settings')} */}
-                    {renderMenuItem('info-outline', 'About')}
-
+                    {/* {renderMenuItem('info-outline', 'About')} */}
+                    {/* {renderMenuItem('photo-library', 'Gallery', () => router.push('/(teacher)/gallary'))} */}
                     {/* <TouchableOpacity style={styles.logoutButton}>
                         <MaterialIcons name="logout" size={18} color="red" />
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity> */}
 
                     {/* <SignOutButton></SignOutButton> */}
-                    <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+                    <TouchableOpacity onPress={showLogoutConfirmation} style={styles.logoutButton}>
                         <MaterialIcons name="logout" size={18} color="white" />
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity>
