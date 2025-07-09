@@ -173,7 +173,7 @@ const TeacherDiaryPage = () => {
           onPress: async () => {
             setLoading(true);
             const token = await TokenStore.getToken();
-            await deleteDiaryEntry({ entryId, token });
+            await deleteDiaryEntry( entryId, token );
             setDiaryItems((prev) => prev.filter((item) => item.id !== entryId));
             setLoading(false);
           },

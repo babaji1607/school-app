@@ -163,3 +163,30 @@ export async function fetchDiaryEntriesByTeacher({
     return null;
   }
 }
+
+
+export async function deleteDiaryEntry(entryId: string, token: string): Promise<void> {
+  try {
+    const response = await fetch(`${GLOBAL_URL}/diary/${entryId}`, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      const errorMsg = errorBody.detail || response.statusText || 'Unknown error';
+      throw new Error(`Failed to delete entry (${response.status}): ${errorMsg}`);
+    }
+
+    console.log(`✅ Entry ${entryId} deleted successfully.`);
+  } catch (error) {
+    console.error(
+      '❌ Error deleting diary entry:',
+      error instanceof Error ? error.message : error
+    );
+    throw error; // optional: rethrow if you want to handle it outside
+  }
+}
