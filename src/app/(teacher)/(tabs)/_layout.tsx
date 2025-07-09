@@ -3,6 +3,7 @@ import { MaterialIcons, Octicons, Ionicons, Feather } from '@expo/vector-icons'
 import { View, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
 
+
 const TabRoot = () => {
     const router = useRouter()
     return (
@@ -83,6 +84,14 @@ const TabRoot = () => {
                         // tabBarButton: () => null, // This removes the tab button from the tab bar
                     }}
                     name='profile' />
+                <Tabs.Screen
+                    options={{
+                        tabBarIcon: ({ color }) => (
+                            <Octicons name='note' size={25} color={color} />
+                        ),
+                        title: 'Diary'
+                    }}
+                    name='diary' />
             </Tabs>
         </View>
     )

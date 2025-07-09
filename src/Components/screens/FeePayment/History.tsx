@@ -107,13 +107,25 @@ const FeePaymentScreen = () => {
         },
         (error) => {
           console.error('Error fetching fee history:', error);
-          setError(error.message || 'Failed to fetch payment history');
+          // Handle "No receipts found" as empty state rather than error
+          if (error.message?.includes('No receipts found')) {
+            setPaymentData([]);
+            setError(null);
+          } else {
+            setError(error.message || 'Failed to fetch payment history');
+          }
           setLoading(false);
         }
       );
     } catch (err) {
       console.error('Error in populateHistory:', err);
-      setError(err.message || 'An unexpected error occurred');
+      // Handle the case where the error might be in the message property
+      if (err.message?.includes('No receipts found')) {
+        setPaymentData([]);
+        setError(null);
+      } else {
+        setError(err.message || 'An unexpected error occurred');
+      }
       setLoading(false);
     }
   };
@@ -128,6 +140,46 @@ const FeePaymentScreen = () => {
     populateHistory();
   }, []);
 
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialIcons name="receipt-long" size={64} color="#fff" />
+      <Text style={styles.emptyText}>No payment history found</Text>
+      <Text style={styles.emptySubText}>Your fee payments will appear here once made</Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
+      <Text style={styles.errorText}>Failed to load payment history</Text>
+      <Text style={styles.errorSubText}>{error}</Text>
+      <TouchableOpacity style={styles.retryButton} onPress={populateHistory}>
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderPaymentItem = (item) => (
+    <View key={item.id} style={styles.historyCard}>
+      <View style={styles.leftCircle}>
+        <Text style={styles.circleText}>{getFeeTypeAbbreviation(item.period)}</Text>
+      </View>
+      <View style={styles.rightContent}>
+        <Text style={styles.feeTitle}>{item.period || 'Fee Payment'}</Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {item.payment_reference !== 'no reference'
+            ? `Ref: ${item.payment_reference}`
+            : `Payment ID: ${item.id?.slice(0, 8)}...`}
+        </Text>
+        <Text style={styles.dateText}>{formatDate(item.date)} • Online Payment</Text>
+        <Text style={styles.relativeTime}>{getRelativeTime(item.date)}</Text>
+      </View>
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountText}>{formatAmount(item.amount)}</Text>
+      </View>
+    </View>
+  );
+
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
@@ -137,70 +189,22 @@ const FeePaymentScreen = () => {
     );
   }
 
-  const renderEmptyOrErrorState = () => {
-    if (error) {
-      return (
-        <View style={styles.emptyContainer}>
-          <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
-          <Text style={styles.errorText}>Failed to load payment history</Text>
-          <Text style={styles.errorSubText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={populateHistory}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-    return (
-      <View style={styles.emptyContainer}>
-        <MaterialIcons name="receipt-long" size={64} color="#ccc" />
-        <Text style={styles.emptyText}>No payment history found</Text>
-        <Text style={styles.emptySubText}>Your fee payments will appear here</Text>
-      </View>
-    );
-  };
-
   return (
     <ScrollView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       contentContainerStyle={paymentData.length === 0 ? styles.emptyListContainer : styles.listContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* <View style={{ alignItems: 'center', padding: 3 }}>
-        <Text style={{ fontSize: 11, color: '#708090' }}>Pull down to refresh</Text>
-      </View> */}
-
-      {paymentData.length === 0 ? (
-        renderEmptyOrErrorState()
+      {paymentData.length > 0 ? (
+        paymentData.map(renderPaymentItem)
+      ) : error ? (
+        renderErrorState()
       ) : (
-        paymentData.map((item) => (
-          <View key={item.id} style={styles.historyCard}>
-            <View style={styles.leftCircle}>
-              <Text style={styles.circleText}>{getFeeTypeAbbreviation(item.period)}</Text>
-            </View>
-            <View style={styles.rightContent}>
-              <Text style={styles.feeTitle}>{item.period || 'Fee Payment'}</Text>
-              <Text style={styles.description} numberOfLines={2}>
-                {item.payment_reference !== 'no reference'
-                  ? `Ref: ${item.payment_reference}`
-                  : `Payment ID: ${item.id?.slice(0, 8)}...`}
-              </Text>
-              <Text style={styles.dateText}>{formatDate(item.date)} • Online Payment</Text>
-              <Text style={styles.relativeTime}>{getRelativeTime(item.date)}</Text>
-            </View>
-            <View style={styles.amountContainer}>
-              <Text style={styles.amountText}>{formatAmount(item.amount)}</Text>
-            </View>
-          </View>
-        ))
+        renderEmptyState()
       )}
     </ScrollView>
   );
 };
-
-export default FeePaymentScreen;
-
-
-export default FeePaymentScreen;
 
 const styles = StyleSheet.create({
   listContainer: {
@@ -325,3 +329,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export default FeePaymentScreen;
