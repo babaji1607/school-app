@@ -190,3 +190,37 @@ export async function deleteDiaryEntry(entryId: string, token: string): Promise<
     throw error; // optional: rethrow if you want to handle it outside
   }
 }
+
+
+export async function fetchClassroomNames(token: string): Promise<string[]> {
+  const url = `${GLOBAL_URL}/classrooms/names`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      // Log the error details for debugging
+      console.error(`Request failed with status ${response.status}: ${response.statusText}`);
+      return [];
+    }
+
+    const data = await response.json();
+
+    // Validate data type: it must be an array of strings
+    if (Array.isArray(data) && data.every(item => typeof item === 'string')) {
+      return data;
+    } else {
+      console.error('Invalid data structure received', data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Network or parsing error:', error);
+    return [];
+  }
+}

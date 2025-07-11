@@ -18,6 +18,7 @@ import {
   uploadDiaryEntry,
   fetchDiaryEntriesByTeacher,
   deleteDiaryEntry,
+  fetchClassroomNames
 } from '../../../api/Diary';
 
 const TeacherDiaryPage = () => {
@@ -28,6 +29,11 @@ const TeacherDiaryPage = () => {
   const [offset, setOffset] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [teacherName, setTeacherName] = useState('');
+  
+  // New state for classroom dropdown
+  const [classrooms, setClassrooms] = useState([]);
+  const [showClassroomDropdown, setShowClassroomDropdown] = useState(false);
+  const [loadingClassrooms, setLoadingClassrooms] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -45,6 +51,30 @@ const TeacherDiaryPage = () => {
     } catch (error) {
       console.error('Error getting teacher info:', error);
       return 'Unknown Teacher';
+    }
+  };
+
+  // New function to fetch classroom names
+  const fetchClassrooms = async () => {
+    if (loadingClassrooms) return;
+    
+    try {
+      setLoadingClassrooms(true);
+      const token = await TokenStore.getToken();
+      const response = await fetchClassroomNames(token);
+      
+      if (Array.isArray(response)) {
+        setClassrooms(response);
+      } else {
+        console.error('Invalid response format for classrooms:', response);
+        setClassrooms([]);
+      }
+    } catch (error) {
+      console.error('Error fetching classrooms:', error);
+      Alert.alert('Error', 'Failed to load classroom names');
+      setClassrooms([]);
+    } finally {
+      setLoadingClassrooms(false);
     }
   };
 
@@ -98,6 +128,13 @@ const TeacherDiaryPage = () => {
     fetchDiaryEntries(0, true);
   }, []);
 
+  // Fetch classrooms when modal opens
+  useEffect(() => {
+    if (showCreateModal) {
+      fetchClassrooms();
+    }
+  }, [showCreateModal]);
+
   const handleSubmit = async () => {
     if (!formData.title || !formData.className) {
       Alert.alert('Error', 'Title and Class Name are required');
@@ -137,7 +174,6 @@ const TeacherDiaryPage = () => {
     }
   };
 
-
   const handlePickPDF = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -173,7 +209,7 @@ const TeacherDiaryPage = () => {
           onPress: async () => {
             setLoading(true);
             const token = await TokenStore.getToken();
-            await deleteDiaryEntry( entryId, token );
+            await deleteDiaryEntry(entryId, token);
             setDiaryItems((prev) => prev.filter((item) => item.id !== entryId));
             setLoading(false);
           },
@@ -184,6 +220,12 @@ const TeacherDiaryPage = () => {
       Alert.alert('Error', 'Failed to delete diary entry');
       setLoading(false);
     }
+  };
+
+  // Handle classroom selection
+  const handleClassroomSelect = (classroom) => {
+    setFormData((prev) => ({ ...prev, className: classroom }));
+    setShowClassroomDropdown(false);
   };
 
   const renderDiaryItem = ({ item }) => (
@@ -260,13 +302,64 @@ const TeacherDiaryPage = () => {
             onChangeText={(text) => setFormData((prev) => ({ ...prev, title: text }))}
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Class Name *"
-            placeholderTextColor="#999"
-            value={formData.className}
-            onChangeText={(text) => setFormData((prev) => ({ ...prev, className: text }))}
-          />
+          {/* Classroom Dropdown */}
+          <View style={styles.dropdownContainer}>
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => setShowClassroomDropdown(true)}
+            >
+              <Text style={[styles.dropdownButtonText, formData.className ? styles.selectedText : styles.placeholderText]}>
+                {formData.className || 'Select Class Name *'}
+              </Text>
+              <MaterialIcons name="arrow-drop-down" size={24} color="#999" />
+            </TouchableOpacity>
+
+            {/* Classroom Dropdown Modal */}
+            <Modal
+              visible={showClassroomDropdown}
+              transparent={true}
+              animationType="fade"
+              onRequestClose={() => setShowClassroomDropdown(false)}
+            >
+              <TouchableOpacity
+                style={styles.dropdownOverlay}
+                onPress={() => setShowClassroomDropdown(false)}
+              >
+                <View style={styles.dropdownModal}>
+                  <Text style={styles.dropdownTitle}>Select Classroom</Text>
+                  
+                  {loadingClassrooms ? (
+                    <View style={styles.loadingContainer}>
+                      <Text style={styles.loadingText}>Loading classrooms...</Text>
+                    </View>
+                  ) : (
+                    <ScrollView style={styles.dropdownList}>
+                      {classrooms.length > 0 ? (
+                        classrooms.map((classroom, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.dropdownItem}
+                            onPress={() => handleClassroomSelect(classroom)}
+                          >
+                            <Text style={styles.dropdownItemText}>{classroom}</Text>
+                          </TouchableOpacity>
+                        ))
+                      ) : (
+                        <Text style={styles.noClassroomsText}>No classrooms available</Text>
+                      )}
+                    </ScrollView>
+                  )}
+                  
+                  <TouchableOpacity
+                    style={styles.dropdownCancelButton}
+                    onPress={() => setShowClassroomDropdown(false)}
+                  >
+                    <Text style={styles.dropdownCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            </Modal>
+          </View>
 
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -301,7 +394,7 @@ const TeacherDiaryPage = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 16, backgroundColor: '#f5b0c0' },
   headerTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   createButton: {
     flexDirection: 'row',
@@ -365,6 +458,86 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: { color: '#fff', fontWeight: '600' },
+  
+  // New dropdown styles
+  dropdownContainer: {
+    marginBottom: 12,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 12,
+    backgroundColor: 'white',
+  },
+  dropdownButtonText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  selectedText: {
+    color: '#000',
+  },
+  placeholderText: {
+    color: '#999',
+  },
+  dropdownOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownModal: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    width: '80%',
+    maxHeight: '60%',
+  },
+  dropdownTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  dropdownList: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  noClassroomsText: {
+    textAlign: 'center',
+    color: '#999',
+    padding: 20,
+  },
+  dropdownCancelButton: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#ccc',
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  dropdownCancelText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 });
 
 export default TeacherDiaryPage;
