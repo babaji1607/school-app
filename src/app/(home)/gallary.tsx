@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  StatusBar,
+  SafeAreaView,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import YoutubePlayer from 'react-native-youtube-iframe';
@@ -18,6 +20,19 @@ import { GLOBAL_URL } from '../../../utils';
 const { width } = Dimensions.get('window');
 const LIMIT = 10;
 
+// ✅ Custom throttle function
+function throttle(func, limit) {
+  let inThrottle = false;
+  return (...args) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}
+
+// ✅ Fetch items
 export async function fetchGalleryItems(offset = 0, limit = LIMIT) {
   const url = `${GLOBAL_URL}/gallery/?offset=${offset}&limit=${limit}`;
   const token = await TokenStore.getToken();
@@ -75,6 +90,8 @@ const GalleryScreen = () => {
     }
   };
 
+  const throttledLoadMore = useRef(throttle(loadMore, 1000)).current;
+
   useEffect(() => {
     isMounted.current = true;
     loadInitialData();
@@ -102,54 +119,125 @@ const GalleryScreen = () => {
   const onScroll = ({ nativeEvent }) => {
     const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
     const isBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-    if (isBottom) loadMore();
+    if (isBottom) throttledLoadMore();
+  };
+
+  const renderMasonryGrid = () => {
+    const columnCount = 2;
+    const columns = Array.from({ length: columnCount }, () => []);
+
+    imageItems.forEach((item, index) => {
+      const columnIndex = index % columnCount;
+      columns[columnIndex].push({ ...item, originalIndex: index });
+    });
+
+    return (
+      <View style={styles.masonryContainer}>
+        {columns.map((column, columnIndex) => (
+          <View key={columnIndex} style={styles.column}>
+            {column.map((item) => {
+              const height = Math.floor(Math.random() * 100) + 180;
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => setVisibleImageIndex(item.originalIndex)}
+                  style={[styles.masonryItem, { height }]}
+                >
+                  <FastImage
+                    source={{ uri: item.imageUrl }}
+                    style={styles.masonryImage}
+                    resizeMode={FastImage.resizeMode.cover}
+                  />
+                  <View style={styles.imageOverlay}>
+                    <View style={styles.overlayGradient} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+      </View>
+    );
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Gallery</Text>
+        <Text style={styles.headerSubtitle}>
+          {galleryItems.length} {galleryItems.length === 1 ? 'item' : 'items'}
+        </Text>
+      </View>
+
       <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={loadInitialData} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={loadInitialData}
+            colors={['#6366f1']}
+            tintColor="#6366f1"
+          />
         }
         onScroll={onScroll}
-        scrollEventThrottle={200}
+        scrollEventThrottle={16}
       >
-        <Text style={styles.heading}>School Gallery</Text>
-
-        {/* Videos */}
-        {videoItems.map((item) => {
-          const ref = React.createRef();
-          const videoId = extractYouTubeId(item.videoUrl);
-          playerRefs.current[item.id] = ref;
-          return (
-            <View key={item.id} style={styles.videoBox}>
-              <YoutubePlayer ref={ref} height={220} play={false} videoId={videoId} />
+        {/* Videos Section */}
+        {videoItems.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Videos</Text>
+              <View style={styles.sectionLine} />
             </View>
-          );
-        })}
-
-        {/* Images in Grid */}
-        <View style={styles.grid}>
-          {imageItems.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => setVisibleImageIndex(index)}
-              style={styles.imageBox}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.videoScrollContainer}
             >
-              <FastImage
-                source={{ uri: item.imageUrl }}
-                style={styles.image}
-                resizeMode={FastImage.resizeMode.cover}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
+              {videoItems.map((item) => {
+                const ref = React.createRef();
+                const videoId = extractYouTubeId(item.videoUrl);
+                playerRefs.current[item.id] = ref;
+                return (
+                  <View key={item.id} style={styles.videoCard}>
+                    <YoutubePlayer ref={ref} height={200} play={false} videoId={videoId} />
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* Photos Section */}
+        {imageItems.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Photos</Text>
+              <View style={styles.sectionLine} />
+            </View>
+            {renderMasonryGrid()}
+          </View>
+        )}
 
         {/* Loading More */}
         {loadingMore && (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <ActivityIndicator size="small" color="#007AFF" />
-            <Text style={{ marginTop: 8, color: '#666' }}>Loading more...</Text>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#6366f1" />
+            <Text style={styles.loadingText}>Loading more...</Text>
+          </View>
+        )}
+
+        {/* Empty State */}
+        {!refreshing && galleryItems.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No items found</Text>
+            <Text style={styles.emptyStateSubtitle}>
+              Pull down to refresh and check for new content
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -161,45 +249,86 @@ const GalleryScreen = () => {
         visible={visibleImageIndex !== null}
         onRequestClose={() => setVisibleImageIndex(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f2f2f2' },
-  heading: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 16,
-    color: '#1a1a1a',
-  },
-  videoBox: {
-    width: width - 32,
-    marginHorizontal: 16,
-    marginBottom: 16,
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
-    elevation: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
-  grid: {
+  headerTitle: { fontSize: 32, fontWeight: '700', color: '#1e293b', marginBottom: 4 },
+  headerSubtitle: { fontSize: 14, color: '#64748b', fontWeight: '500' },
+  scrollView: { flex: 1, backgroundColor: '#fafafa' },
+  section: { marginBottom: 24 },
+  sectionHeader: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 8,
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
-  imageBox: {
-    width: (width - 48) / 2,
-    marginBottom: 12,
+  sectionTitle: { fontSize: 20, fontWeight: '600', color: '#374151', marginRight: 12 },
+  sectionLine: { flex: 1, height: 1, backgroundColor: '#e5e7eb' },
+  videoScrollContainer: { paddingHorizontal: 20 },
+  videoCard: {
+    width: width * 0.8,
+    marginRight: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  masonryContainer: { flexDirection: 'row', paddingHorizontal: 16 },
+  column: { flex: 1, paddingHorizontal: 4 },
+  masonryItem: {
+    marginBottom: 8,
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    elevation: 2,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  image: {
-    width: '100%',
-    height: 140,
+  masonryImage: { width: '100%', height: '100%' },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+  },
+  overlayGradient: { flex: 1, backgroundColor: 'rgba(0,0,0,0.1)' },
+  loadingContainer: { padding: 20, alignItems: 'center' },
+  loadingText: { marginTop: 8, color: '#64748b', fontSize: 14, fontWeight: '500' },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  emptyStateSubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

@@ -52,10 +52,16 @@ export default function LoginScreen({ navigation }) {
   };
 
   const updateStudentDeviceToken = async (studentData) => {
-    const notification_token = await TokenStore.getNotificationToken();
+    const notification_token = await messaging().getToken()
+    if (!notification_token) {
+      console.log("Not notification token is stored in here")
+      return
+    }
+    console.log('This is notification token', notification_token)
+    await TokenStore.setNotificationToken(notification_token); // may be null
     const token = await TokenStore.getToken();
     const updatedData = { ...studentData, notification_token };
-    console.log(updatedData)
+    console.log("updated student data", updatedData)
     await updateStudent(
       token,
       updatedData.id,
@@ -126,6 +132,7 @@ export default function LoginScreen({ navigation }) {
           } else if (data.role === 'student') {
             await messaging().subscribeToTopic('student');
             if (data.student_profile?.class_id) {
+              console.log('subscribed to class', data.student_profile.class_id)
               await messaging().subscribeToTopic(data.student_profile.class_id);
             }
             // Update student device token

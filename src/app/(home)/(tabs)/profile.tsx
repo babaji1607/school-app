@@ -14,7 +14,7 @@ import { TokenStore } from '../../../../TokenStore';
 import { useRouter } from 'expo-router';
 import messaging from '@react-native-firebase/messaging';
 import { getUserInfo } from '../../../api/Auth';
-import { getStudentById } from '../../../api/Students';
+import { getStudentById, updateStudent } from '../../../api/Students';
 
 const ProfileScreen = () => {
     const [userInfo, setUserInfo] = useState(null);
@@ -41,9 +41,17 @@ const ProfileScreen = () => {
 
     const handleLogout = async () => {
         try {
-            TokenStore.clearAll();
             await messaging().unsubscribeFromTopic('student');
-            console.log('Successfully unsubscribed from student');
+            const studentInfo = await TokenStore.getUserInfo()
+            const token = await TokenStore.getToken()
+            await updateStudent(
+                token,
+                studentInfo?.id,
+                { ...studentInfo, notification_token: null },
+                (data) => console.log("Token updated successfully", data),
+                (error) => console.log("Token update failed", error)
+            )
+            TokenStore.clearAll();
             router.replace('/(auth)/auth');
         } catch (error) {
             console.log('Logout error:', error);

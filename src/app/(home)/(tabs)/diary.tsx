@@ -221,10 +221,13 @@ const DiaryPage = () => {
   return (
     <View style={styles.container}>
       <View style={{
-        paddingVertical: 20,
+        paddingVertical: 25,
         paddingHorizontal: 10,
       }}>
-
+        <Text style={{
+          fontSize: 20,
+          fontWeight: 'bold'
+        }}>Diary</Text>
       </View>
       <FlatList
         data={diaryItems}
@@ -256,6 +259,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5b0c0',
     paddingHorizontal: 20,
+    // paddingTop: 30
   },
   diaryItem: {
     backgroundColor: '#fef9e7',

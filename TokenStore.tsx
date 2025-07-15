@@ -30,13 +30,13 @@ export const TokenStore = {
 
   setNotificationToken: async (token) => {
     if (token) {
-      await SecureStore.setItemAsync(NOTIFICATION_KEY, JSON.stringify(token));
+      await SecureStore.setItemAsync(NOTIFICATION_KEY, token);
     }
   },
 
   getNotificationToken: async () => {
     const token = await SecureStore.getItemAsync(NOTIFICATION_KEY)
-    return token ? JSON.parse(token) : null
+    return token ? token : null
   },
 
   setClassInfo: async (info) => {
