@@ -109,6 +109,7 @@ export default function LoginScreen({ navigation }) {
       }
 
       const { data } = loginResult;
+      // console.log(data.student_profile)
 
       if (data && data.access_token) {
         // Store token and user info with proper await

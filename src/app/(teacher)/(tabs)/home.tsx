@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Dimensions, Animated, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Dimensions, Animated, TouchableOpacity, RefreshControl } from 'react-native';
 import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Book, Calendar, LibraryBig, MessageCircle, Newspaper, ArrowRight } from 'lucide-react-native';
@@ -20,36 +20,49 @@ export default function HomePage() {
         'Inter-Bold': Inter_700Bold,
     });
 
-
     const router = useRouter()
 
     const [events, setEvents] = useState([])
-
-
-
+    const [refreshing, setRefreshing] = useState(false);
 
     const scrollOffsetValue = useSharedValue(0);
 
     const fadeAnim = useRef(new Animated.Value(0)).current; // For fade-in animations
 
-
-    const populateEvents = async () => {
+    const populateEvents = async (isRefreshing = false) => {
         try {
+            if (isRefreshing) {
+                setRefreshing(true);
+            }
+
             const token = await TokenStore.getToken()
             await getActiveEvents(
                 token,
                 (data) => {
                     console.log("Events fetched successfully", data)
                     setEvents(data)
+                    if (isRefreshing) {
+                        setRefreshing(false);
+                    }
                 },
                 (error) => {
                     console.log(error)
+                    if (isRefreshing) {
+                        setRefreshing(false);
+                    }
                 }
             )
         } catch (e) {
             console.log(e)
+            if (isRefreshing) {
+                setRefreshing(false);
+            }
         }
     }
+
+    const onRefresh = () => {
+        populateEvents(true);
+    };
 
     useEffect(() => {
         // Fade-in animation for the entire screen
@@ -113,7 +126,7 @@ export default function HomePage() {
                 </Text>
                 <TouchableOpacity onPress={() => {
                     router.push({
-                        pathname: '/(teacher)/EventDetail',
+                        pathname: '/(home)/EventDetail',
                         params: { event: JSON.stringify(event) }
                     })
                 }} style={styles.readMoreButton}>
@@ -128,6 +141,18 @@ export default function HomePage() {
             <Animated.ScrollView
                 style={{ opacity: fadeAnim, paddingTop: 60, }}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#F72C5B']} // Android
+                        tintColor="#F72C5B" // iOS
+                        title="Pull to refresh..." // iOS
+                        titleColor="#666" // iOS
+                        progressBackgroundColor="#ffffff" // Android
+                        progressViewOffset={60} // Adjust for the paddingTop offset
+                    />
+                }
             >
                 {/* gallary route  */}
                 {/* News Carousel */}
@@ -171,7 +196,7 @@ export default function HomePage() {
                 <View style={styles.gallaryBox}>
                     <TouchableOpacity
                         onPress={() => {
-                            router.push('/(teacher)/gallary')
+                            router.push('/(home)/gallary')
                         }}
                         style={styles.gallaryButton}>
                         {/* Gradient Overlay */}

@@ -4,6 +4,7 @@ import {
   View,
   Text,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -12,7 +13,8 @@ import { TokenStore } from "../../../../TokenStore";
 
 const AttendanceScreen = () => {
   const [selectedDate, setSelectedDate] = useState(null);
-  const [attendanceData, setAttendanceData] = useState([])
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ✅ Dummy attendance data from backend
   // const attendanceData = [
@@ -53,40 +55,69 @@ const AttendanceScreen = () => {
     return marks;
   }, [attendanceData]);
 
-  const populateData = async () => {
+  const populateData = async (isRefreshing = false) => {
     try {
+      if (isRefreshing) {
+        setRefreshing(true);
+      }
+      
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0'); // months are 0-indexed
       const formatted = `${year}-${month}`;
-      const token = await TokenStore.getToken()
-      const student = await TokenStore.getUserInfo()
-      const studentId = student?.id
+      const token = await TokenStore.getToken();
+      const student = await TokenStore.getUserInfo();
+      const studentId = student?.id;
+      
       fetchStudentAttendanceCalendar(
         studentId,
         formatted,
         token,
         (data) => {
-          console.log('successfully fetched attendance', data)
-          setAttendanceData(data)
+          console.log('successfully fetched attendance', data);
+          setAttendanceData(data);
+          if (isRefreshing) {
+            setRefreshing(false);
+          }
         },
         (error) => {
-          console.log(error, 'Error')
+          console.log(error, 'Error');
+          if (isRefreshing) {
+            setRefreshing(false);
+          }
         }
-      )
+      );
     } catch (e) {
-      console.log(e)
+      console.log(e);
+      if (isRefreshing) {
+        setRefreshing(false);
+      }
     }
-  }
+  };
+
+  const onRefresh = () => {
+    populateData(true);
+  };
 
   useEffect(() => {
-    populateData()
-  }, [])
-
-
+    populateData();
+  }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView 
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#F72C5B']} // Android
+          tintColor="#F72C5B" // iOS
+          title="Pull to refresh..." // iOS
+          titleColor="#666" // iOS
+          progressBackgroundColor="#ffffff" // Android
+        />
+      }
+    >
       <Text style={styles.header}>Attendance</Text>
 
       {/* 📅 Calendar */}
@@ -150,7 +181,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 100,
     backgroundColor: "#f5b0c0",
-    height: "100%"
+    minHeight: "100%"
   },
   header: {
     fontSize: 22,
