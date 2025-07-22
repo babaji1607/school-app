@@ -33,13 +33,13 @@ const EventDetails = () => {
 
     return (
         <View style={styles.wrapper}>
-            <ScrollView contentContainerStyle={styles.container}>
+            <ScrollView style={styles.container}>
                 <Image source={{ uri: imageUrl }} style={styles.image} />
                 <Text style={styles.title}>{title}</Text>
                 <Text style={styles.description}>
                     {description?.toString() ?? 'No description'}
                 </Text>
-                <View style={{ height: 80 }} /> {/* Spacer so button doesn’t overlap content */}
+                <View style={{ height: 80 }} />
             </ScrollView>
 
             <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -67,7 +67,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: 400,
-        objectFit: 'cover',
         borderRadius: 12,
         marginBottom: 20,
     },

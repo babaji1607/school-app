@@ -18,7 +18,7 @@ import {
   uploadDiaryEntry,
   fetchDiaryEntriesByTeacher,
   deleteDiaryEntry,
-  fetchClassroomNames
+  fetchClassroomNames,
 } from '../../../api/Diary';
 
 const TeacherDiaryPage = () => {
@@ -28,9 +28,7 @@ const TeacherDiaryPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [teacherName, setTeacherName] = useState('');
-  
-  // New state for classroom dropdown
+
   const [classrooms, setClassrooms] = useState([]);
   const [showClassroomDropdown, setShowClassroomDropdown] = useState(false);
   const [loadingClassrooms, setLoadingClassrooms] = useState(false);
@@ -54,85 +52,60 @@ const TeacherDiaryPage = () => {
     }
   };
 
-  // New function to fetch classroom names
   const fetchClassrooms = async () => {
     if (loadingClassrooms) return;
-    
     try {
       setLoadingClassrooms(true);
       const token = await TokenStore.getToken();
       const response = await fetchClassroomNames(token);
-      
-      if (Array.isArray(response)) {
-        setClassrooms(response);
-      } else {
-        console.error('Invalid response format for classrooms:', response);
-        setClassrooms([]);
-      }
+      if (Array.isArray(response)) setClassrooms(response);
+      else setClassrooms([]);
     } catch (error) {
       console.error('Error fetching classrooms:', error);
       Alert.alert('Error', 'Failed to load classroom names');
-      setClassrooms([]);
     } finally {
       setLoadingClassrooms(false);
     }
   };
 
-  const fetchDiaryEntries = useCallback(
-    async (currentOffset = 0, isRefresh = false) => {
-      if (loading && !isRefresh) return;
+  const fetchDiaryEntries = useCallback(async (currentOffset = 0, isRefresh = false) => {
+    if (loading && !isRefresh) return;
 
-      try {
-        setLoading(true);
-        const token = await TokenStore.getToken();
-        const teacher = await getTeacherInfo();
-        // setTeacherName(teacher);
-        console.log('Fetching diary entries for teacher:', teacher);
-        console.log({
-          teacherName: teacher,
-          token,
-          offset: currentOffset,
-          limit: LIMIT,
-        })
-        const response = await fetchDiaryEntriesByTeacher({
-          teacherName: teacher,
-          token,
-          offset: currentOffset,
-          limit: LIMIT,
-        });
+    try {
+      setLoading(true);
+      const token = await TokenStore.getToken();
+      const teacher = await getTeacherInfo();
+      const response = await fetchDiaryEntriesByTeacher({
+        teacherName: teacher,
+        token,
+        offset: currentOffset,
+        limit: LIMIT,
+      });
 
-        if (response?.items) {
-          const newItems = Array.isArray(response.items) ? response.items : [];
-
-          if (isRefresh) {
-            setDiaryItems(newItems);
-            setOffset(LIMIT);
-          } else {
-            setDiaryItems((prev) => [...prev, ...newItems]);
-            setOffset((prev) => prev + LIMIT);
-          }
-          setHasMore(newItems.length === LIMIT);
-        }
-      } catch (error) {
-        console.error('Fetch error:', error);
-        Alert.alert('Error', 'Failed to load diary entries');
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+      const newItems = Array.isArray(response?.items) ? response.items : [];
+      if (isRefresh) {
+        setDiaryItems(newItems);
+        setOffset(LIMIT);
+      } else {
+        setDiaryItems((prev) => [...prev, ...newItems]);
+        setOffset((prev) => prev + LIMIT);
       }
-    },
-    [loading]
-  );
+      setHasMore(newItems.length === LIMIT);
+    } catch (error) {
+      console.error('Fetch error:', error);
+      Alert.alert('Error', 'Failed to load diary entries');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [loading]);
 
   useEffect(() => {
     fetchDiaryEntries(0, true);
   }, []);
 
-  // Fetch classrooms when modal opens
   useEffect(() => {
-    if (showCreateModal) {
-      fetchClassrooms();
-    }
+    if (showCreateModal) fetchClassrooms();
   }, [showCreateModal]);
 
   const handleSubmit = async () => {
@@ -141,29 +114,28 @@ const TeacherDiaryPage = () => {
       return;
     }
 
+    // Optional: Prevent submission if file is required
+    // if (!formData.file) {
+    //   Alert.alert('Error', 'Please attach a PDF file before submitting.');
+    //   return;
+    // }
+
     try {
       setLoading(true);
       const token = await TokenStore.getToken();
       const teacher = await getTeacherInfo();
-      console.log('Submitting diary entry for teacher:', teacher);
 
       await uploadDiaryEntry({
         title: formData.title,
         classname: formData.className,
-        teacherName: teacher, // Assuming `teacher` is just the name string
+        teacherName: teacher,
         description: formData.description,
-        file: formData.file, // File or null
+        file: formData.file,
         token,
       });
 
       setShowCreateModal(false);
-      setFormData({
-        title: '',
-        description: '',
-        className: '',
-        file: null,
-      });
-
+      setFormData({ title: '', description: '', className: '', file: null });
       fetchDiaryEntries(0, true);
       Alert.alert('Success', 'Diary entry created successfully!');
     } catch (error) {
@@ -179,50 +151,59 @@ const TeacherDiaryPage = () => {
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/pdf',
         copyToCacheDirectory: true,
+        multiple: false, // optional
       });
 
-      if (result.type === 'success') {
+      if (result && result.assets && result.assets.length > 0) {
+        const fileAsset = result.assets[0];
+
+        const pickedFile = {
+          uri: fileAsset.uri,
+          name: fileAsset.name,
+          type: fileAsset.mimeType || 'application/pdf',
+        };
+
+        console.log('Picked File:', pickedFile);
+
         setFormData((prev) => ({
           ...prev,
-          file: {
-            uri: result.uri,
-            name: result.name,
-            type: 'application/pdf',
-          },
+          file: pickedFile,
         }));
+      } else if (result.type === 'cancel' || !result.assets) {
+        console.log('File selection canceled.');
+        setFormData((prev) => ({ ...prev, file: null }));
       }
     } catch (error) {
       console.error('Document Picker Error:', error);
+      setFormData((prev) => ({ ...prev, file: null }));
     }
   };
 
+
+
   const handleDeleteEntry = async (entryId) => {
-    try {
-      Alert.alert('Confirm Delete', 'Are you sure you want to delete this entry?', [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
+    Alert.alert('Confirm Delete', 'Are you sure you want to delete this entry?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
             setLoading(true);
             const token = await TokenStore.getToken();
             await deleteDiaryEntry(entryId, token);
             setDiaryItems((prev) => prev.filter((item) => item.id !== entryId));
+          } catch (error) {
+            console.error('Delete error:', error);
+            Alert.alert('Error', 'Failed to delete diary entry');
+          } finally {
             setLoading(false);
-          },
+          }
         },
-      ]);
-    } catch (error) {
-      console.error('Delete error:', error);
-      Alert.alert('Error', 'Failed to delete diary entry');
-      setLoading(false);
-    }
+      },
+    ]);
   };
 
-  // Handle classroom selection
   const handleClassroomSelect = (classroom) => {
     setFormData((prev) => ({ ...prev, className: classroom }));
     setShowClassroomDropdown(false);
@@ -237,12 +218,10 @@ const TeacherDiaryPage = () => {
           <MaterialIcons name="delete" size={20} color="#ff6b9d" />
         </TouchableOpacity>
       </View>
-
       <View style={styles.contentContainer}>
         <Text style={styles.title}>{item.title || 'Untitled'}</Text>
         <Text style={styles.description}>{item.description || 'No description'}</Text>
-        <Text style={styles.description2}>By: {item.teacher_name || 'No description'}</Text>
-
+        <Text style={styles.description2}>By: {item.teacher_name || 'Unknown'}</Text>
         {item.file_url && (
           <TouchableOpacity
             style={styles.downloadButton}
@@ -289,7 +268,7 @@ const TeacherDiaryPage = () => {
         }
       />
 
-      {/* Modal */}
+      {/* Modal for Creating Entry */}
       <Modal visible={showCreateModal} animationType="slide" onRequestClose={() => setShowCreateModal(false)}>
         <ScrollView style={styles.modalContent}>
           <Text style={styles.modalTitle}>Create Diary Entry</Text>
@@ -302,7 +281,7 @@ const TeacherDiaryPage = () => {
             onChangeText={(text) => setFormData((prev) => ({ ...prev, title: text }))}
           />
 
-          {/* Classroom Dropdown */}
+          {/* Classroom dropdown */}
           <View style={styles.dropdownContainer}>
             <TouchableOpacity
               style={styles.dropdownButton}
@@ -313,47 +292,22 @@ const TeacherDiaryPage = () => {
               </Text>
               <MaterialIcons name="arrow-drop-down" size={24} color="#999" />
             </TouchableOpacity>
-
-            {/* Classroom Dropdown Modal */}
-            <Modal
-              visible={showClassroomDropdown}
-              transparent={true}
-              animationType="fade"
-              onRequestClose={() => setShowClassroomDropdown(false)}
-            >
-              <TouchableOpacity
-                style={styles.dropdownOverlay}
-                onPress={() => setShowClassroomDropdown(false)}
-              >
+            <Modal visible={showClassroomDropdown} transparent animationType="fade" onRequestClose={() => setShowClassroomDropdown(false)}>
+              <TouchableOpacity style={styles.dropdownOverlay} onPress={() => setShowClassroomDropdown(false)}>
                 <View style={styles.dropdownModal}>
                   <Text style={styles.dropdownTitle}>Select Classroom</Text>
-                  
                   {loadingClassrooms ? (
-                    <View style={styles.loadingContainer}>
-                      <Text style={styles.loadingText}>Loading classrooms...</Text>
-                    </View>
+                    <View style={styles.loadingContainer}><Text style={styles.loadingText}>Loading...</Text></View>
                   ) : (
                     <ScrollView style={styles.dropdownList}>
-                      {classrooms.length > 0 ? (
-                        classrooms.map((classroom, index) => (
-                          <TouchableOpacity
-                            key={index}
-                            style={styles.dropdownItem}
-                            onPress={() => handleClassroomSelect(classroom)}
-                          >
-                            <Text style={styles.dropdownItemText}>{classroom}</Text>
-                          </TouchableOpacity>
-                        ))
-                      ) : (
-                        <Text style={styles.noClassroomsText}>No classrooms available</Text>
-                      )}
+                      {classrooms.length > 0 ? classrooms.map((cls, idx) => (
+                        <TouchableOpacity key={idx} style={styles.dropdownItem} onPress={() => handleClassroomSelect(cls)}>
+                          <Text style={styles.dropdownItemText}>{cls}</Text>
+                        </TouchableOpacity>
+                      )) : <Text style={styles.noClassroomsText}>No classrooms available</Text>}
                     </ScrollView>
                   )}
-                  
-                  <TouchableOpacity
-                    style={styles.dropdownCancelButton}
-                    onPress={() => setShowClassroomDropdown(false)}
-                  >
+                  <TouchableOpacity style={styles.dropdownCancelButton} onPress={() => setShowClassroomDropdown(false)}>
                     <Text style={styles.dropdownCancelText}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
@@ -373,16 +327,22 @@ const TeacherDiaryPage = () => {
 
           <TouchableOpacity style={styles.fileButton} onPress={handlePickPDF}>
             <MaterialIcons name="attach-file" size={20} color="#ff6b9d" />
-            <Text style={styles.fileButtonText}>
-              {formData.file ? formData.file.name : 'Attach PDF'}
-            </Text>
+            <View>
+              {formData.file ? (
+                <>
+                  <Text style={styles.fileButtonText}>{formData.file.name}</Text>
+                  <Text style={styles.fileMetaText}>{formData.file.uri?.split('/').pop() || ''}</Text>
+                </>
+              ) : (
+                <Text style={styles.fileButtonText}>Attach PDF</Text>
+              )}
+            </View>
           </TouchableOpacity>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={loading}>
               <Text style={styles.submitButtonText}>{loading ? 'Uploading...' : 'Submit'}</Text>
             </TouchableOpacity>
-
             <TouchableOpacity style={styles.cancelButton} onPress={() => setShowCreateModal(false)}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
@@ -392,6 +352,18 @@ const TeacherDiaryPage = () => {
     </View>
   );
 };
+
+// const styles = StyleSheet.create({
+//   // ... all your original styles here ...
+//   fileMetaText: {
+//     color: '#888',
+//     fontSize: 12,
+//     marginTop: 2,
+//   },
+// });
+
+// export default TeacherDiaryPage;
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: '#f5b0c0' },
@@ -458,7 +430,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: { color: '#fff', fontWeight: '600' },
-  
+
   // New dropdown styles
   dropdownContainer: {
     marginBottom: 12,
@@ -537,6 +509,11 @@ const styles = StyleSheet.create({
   dropdownCancelText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  fileMetaText: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 2,
   },
 });
 
