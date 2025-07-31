@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router'
 import { MaterialIcons, Octicons, Ionicons, Feather } from '@expo/vector-icons'
-import { View, TouchableOpacity, Dimensions } from 'react-native'
+import { View, TouchableOpacity, Dimensions, Text } from 'react-native'
 import { useRouter } from 'expo-router'
 
 const TabRoot = () => {
@@ -42,35 +42,41 @@ const TabRoot = () => {
             </TouchableOpacity>
 
             {/* Elevated Attendance Button */}
-            <TouchableOpacity
+            <View
                 style={{
                     position: 'absolute',
-                    bottom: tabBarHeight - 25, // Position above the tab bar
-                    left: width / 2 - 30, // Center horizontally
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: '#F72C5B',
-                    elevation: 12,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 6,
+                    bottom: tabBarHeight / 2 + 18,
+                    left: '50%',
+                    transform: [{ translateX: -30 }],
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    borderWidth: 7,
-                    borderColor: '#f5b0c0',
+                    zIndex: 999,
                 }}
-                onPress={() => {
-                    router.push('/(home)/(tabs)/attendance')
-                }}>
-                <Octicons
-                    name='check-circle'
-                    size={28}
-                    color='#ffffff'
-                />
-            </TouchableOpacity>
+            >
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#F72C5B',
+                        width: 60,
+                        height: 60,
+                        borderRadius: 30,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderWidth:5,
+                        borderColor: "#f5b0c0",
+                        elevation: 5,
+                    }}
+                    onPress={() => {
+                        router.push('/(home)/(tabs)/attendance')
+                    }}
+                >
+                    <Octicons name="check-circle" size={28} color="#fff" />
+                </TouchableOpacity>
+                <View style={{ marginTop: 1 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '500', color: '#F72C5B' }}>
+                        Attendance
+                    </Text>
+                </View>
+            </View>
+
 
             <Tabs
                 initialRouteName='home'
