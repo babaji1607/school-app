@@ -12,7 +12,7 @@ const TabRoot = () => {
     const isVerySmallScreen = width < 350
 
     // Dynamic tab bar height based on screen size
-    const tabBarHeight = isSmallScreen ? 80 : 90
+    const tabBarHeight = isSmallScreen ? 80 : 120
 
     return (
         <View style={{ flex: 1, backgroundColor: "#f5b0c0" }}>
@@ -45,7 +45,7 @@ const TabRoot = () => {
             <View
                 style={{
                     position: 'absolute',
-                    bottom: tabBarHeight / 2 + 18,
+                    bottom: tabBarHeight / 2 + 28,
                     left: '50%',
                     transform: [{ translateX: -30 }],
                     alignItems: 'center',
@@ -62,7 +62,7 @@ const TabRoot = () => {
                         justifyContent: 'center',
                         borderWidth:5,
                         borderColor: "#f5b0c0",
-                        elevation: 5,
+                        // elevation: 5,
                     }}
                     onPress={() => {
                         router.push('/(home)/(tabs)/attendance')
@@ -84,7 +84,7 @@ const TabRoot = () => {
                     headerShown: false,
                     tabBarStyle: {
                         height: tabBarHeight,
-                        paddingTop: isSmallScreen ? 10 : 12,
+                        paddingTop: isSmallScreen ? 10 : 30,
                         paddingBottom: isSmallScreen ? 8 : 10,
                         borderTopEndRadius: 25,
                         borderTopStartRadius: 25,

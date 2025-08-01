@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { 
-    View, 
-    Text, 
-    Image, 
-    TouchableOpacity, 
-    StyleSheet, 
-    SafeAreaView, 
+import {
+    View,
+    Text,
+    Image,
+    TouchableOpacity,
+    StyleSheet,
+    SafeAreaView,
     ScrollView,
     Alert
 } from 'react-native';
@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import messaging from '@react-native-firebase/messaging'
 import { getUserInfo } from '../../../api/Auth';
 import { getTeacherById } from '../../../api/Teachers';
+import Information from '../../../Components/Information';
 
 
 const ProfileScreen = () => {
@@ -198,6 +199,8 @@ const ProfileScreen = () => {
                         <MaterialIcons name="logout" size={18} color="red" />
                         <Text style={styles.logoutText}>Logout</Text>
                     </TouchableOpacity> */}
+
+                    <Information />
 
                     {/* <SignOutButton></SignOutButton> */}
                     <TouchableOpacity onPress={showLogoutConfirmation} style={styles.logoutButton}>

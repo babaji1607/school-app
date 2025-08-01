@@ -7,11 +7,17 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Linking,
+  Alert,
+  Modal,
+  Pressable,
+  Image,
 } from "react-native";
-import RazorpayCheckout from "react-native-razorpay";
 import { createFeeReceipt } from "../../../api/FeeReceipts";
 import { TokenStore } from "../../../../TokenStore";
 import { getFeePostsByStudent, updateFeePostStatus } from "../../../api/Feepost";
+import PlaygroupIcon from '../../../assets/images/amusementpark.png';
+import LkgIcon from '../../../assets/images/preplaygroup.png';
 
 const PaymentScreen = () => {
   const [feePosts, setFeePosts] = useState([]);
@@ -19,14 +25,19 @@ const PaymentScreen = () => {
   const [error, setError] = useState(null);
   const [expandedPosts, setExpandedPosts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [currentFeePost, setCurrentFeePost] = useState(null);
 
   // Late fee calculation (₹10 per day)
   const lateFeePerDay = 10;
-
-  // Current date
   const currentDate = new Date();
 
-  // Fetch fee posts on component mount
+  // UPI IDs for different categories
+  const UPI_IDS = {
+    playgroup: "63008701@ubin",
+    lkgAndUpper: "63009201@ubin",
+  };
+
   useEffect(() => {
     fetchFeePosts();
   }, []);
@@ -46,12 +57,11 @@ const PaymentScreen = () => {
       const response = await getFeePostsByStudent(studentId, token);
 
       if (response.success) {
-        // Sort by latest creation date (newest first)
         const sortedPosts = response.data.items.sort((a, b) =>
           new Date(b.creation_date) - new Date(a.creation_date)
         );
         setFeePosts(sortedPosts);
-        setError(null); // Clear any previous errors
+        setError(null);
       } else {
         setError(response.message || "Failed to fetch fee posts");
       }
@@ -71,7 +81,6 @@ const PaymentScreen = () => {
     fetchFeePosts(true);
   };
 
-  // Toggle expanded state for a post
   const toggleExpanded = (postId) => {
     setExpandedPosts(prev =>
       prev.includes(postId)
@@ -80,13 +89,11 @@ const PaymentScreen = () => {
     );
   };
 
-  // Calculate days after deadline
   const calculateDaysAfterDeadline = (deadlineString) => {
     const deadlineDate = new Date(deadlineString);
     return Math.max(0, Math.ceil((currentDate - deadlineDate) / (1000 * 60 * 60 * 24)));
   };
 
-  // Calculate total amount including late fee
   const calculateTotalAmount = (otherFee, deadline) => {
     const baseFeeAmount = Object.values(otherFee).reduce((sum, amount) => sum + amount, 0);
     const daysAfterDeadline = calculateDaysAfterDeadline(deadline);
@@ -99,7 +106,6 @@ const PaymentScreen = () => {
     };
   };
 
-  // Format deadline date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', {
@@ -107,6 +113,118 @@ const PaymentScreen = () => {
       month: 'short',
       year: 'numeric'
     });
+  };
+
+  const generateUPILink = (feePost, totalAmount, daysAfterDeadline, totalLateFee, category) => {
+    const payeeVPA = category === 'playgroup' ? UPI_IDS.playgroup : UPI_IDS.lkgAndUpper;
+
+    const UPI_CONFIG = {
+      payeeName: "First Step School",
+      payeeVPA: payeeVPA,
+      merchantCode: "EDUCATION",
+      transactionNote: "School Fee Payment",
+    };
+
+    const transactionRef = `FSS${Date.now()}${feePost.id}`.substring(0, 25);
+    const note = totalLateFee > 0
+      ? `${feePost.title} with late fee (${daysAfterDeadline} days)`
+      : feePost.title;
+
+    const upiParams = new URLSearchParams({
+      pa: UPI_CONFIG.payeeVPA,
+      pn: UPI_CONFIG.payeeName,
+      am: totalAmount.toString(),
+      cu: 'INR',
+      tr: transactionRef,
+      tn: `${UPI_CONFIG.transactionNote} - ${note}`,
+      mc: UPI_CONFIG.merchantCode,
+    });
+
+    return `upi://pay?${upiParams.toString()}`;
+  };
+
+  const handleUPIPayment = (feePost) => {
+    setCurrentFeePost(feePost);
+    setShowCategoryModal(true);
+  };
+
+  const handleUPIPaymentWithCategory = async (category) => {
+    try {
+      setShowCategoryModal(false);
+
+      const { totalAmount, daysAfterDeadline, totalLateFee } = calculateTotalAmount(
+        currentFeePost.other_fee,
+        currentFeePost.deadline
+      );
+
+      const upiLink = generateUPILink(
+        currentFeePost,
+        totalAmount,
+        daysAfterDeadline,
+        totalLateFee,
+        category
+      );
+
+      const canOpen = await Linking.canOpenURL(upiLink);
+
+      if (canOpen) {
+        await Linking.openURL(upiLink);
+
+        setTimeout(() => {
+          Alert.alert(
+            "Payment Confirmation",
+            "Have you completed the payment successfully?",
+            [
+              {
+                text: "No",
+                style: "cancel"
+              },
+              {
+                text: "Yes, Payment Done",
+                onPress: () => handlePaymentSuccess(
+                  currentFeePost,
+                  totalAmount,
+                  daysAfterDeadline,
+                  totalLateFee
+                )
+              }
+            ]
+          );
+        }, 2000);
+      } else {
+        Alert.alert(
+          "UPI App Not Found",
+          "No UPI app is installed. Please install a UPI app like GPay, PhonePe, or Paytm.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("UPI Payment Error:", error);
+      Alert.alert("Error", "Unable to open UPI app. Please try again.");
+    }
+  };
+
+  const handlePaymentSuccess = async (feePost, totalAmount, daysAfterDeadline, totalLateFee) => {
+    try {
+      if (feePost.id) {
+        const token = await TokenStore.getToken();
+        // await updateFeePostStatus(
+        //   feePost.id,
+        //   {
+        //     is_paid: true,
+        //     mode: 'upi'
+        //   },
+        //   token
+        // );
+      }
+
+      // await createReceipt(feePost, totalAmount, daysAfterDeadline, totalLateFee);
+
+      // Alert.alert("Success", "Payment recorded successfully!");
+    } catch (error) {
+      console.error("Payment success handling error:", error);
+      // Alert.alert("Error", "Payment may have been completed but there was an error updating records.");
+    }
   };
 
   const createReceipt = async (feePost, totalAmount, daysAfterDeadline, totalLateFee) => {
@@ -118,7 +236,7 @@ const PaymentScreen = () => {
         student_id: stid,
         total_amount: totalAmount,
         paid_on: new Date().toISOString(),
-        payment_reference: 'no reference',
+        payment_reference: `UPI_${Date.now()}`,
         remarks: totalLateFee > 0 ? `${feePost.title} with late fee (${daysAfterDeadline} days)` : feePost.title,
       };
 
@@ -127,7 +245,6 @@ const PaymentScreen = () => {
         token,
         (data) => {
           console.log('Receipt created: ', data);
-          // Refresh the fee posts to update payment status
           fetchFeePosts();
         },
         (error) => {
@@ -139,58 +256,17 @@ const PaymentScreen = () => {
     }
   };
 
-  const handlePayment = (feePost) => {
-    const { totalAmount, daysAfterDeadline, totalLateFee } = calculateTotalAmount(feePost.other_fee, feePost.deadline);
-    console.log(feePost.id)
-    const options = {
-      description: feePost.title,
-      image: 'https://i.imgur.com/3g7nmJC.png',
-      currency: 'INR',
-      key: 'rzp_test_w452IaxWwMliP6',
-      amount: totalAmount * 100, // Razorpay expects amount in paise
-      name: 'First Step School',
-      prefill: {
-        email: 'user@example.com',
-        contact: '9999999999',
-        name: 'Student Name'
-      },
-      theme: { color: '#F37254' }
-    };
-
-    RazorpayCheckout.open(options).then(async (data) => {
-      alert(`Success: ${data.razorpay_payment_id}`);
-      if (feePost.id) {
-        const token = await TokenStore.getToken()
-        await updateFeePostStatus(
-          feePost.id,
-          {
-            is_paid: true,
-            mode: 'online'
-          },
-          token
-        )
-      }
-      await createReceipt(feePost, totalAmount, daysAfterDeadline, totalLateFee);
-    }).catch((error) => {
-      alert(`Payment incomplete`);
-    });
-  };
-
   const renderFeePost = (feePost) => {
     const { baseFeeAmount, totalLateFee, totalAmount, daysAfterDeadline } = calculateTotalAmount(feePost.other_fee, feePost.deadline);
-    const deadlineDate = new Date(feePost.deadline);
 
     return (
       <View key={feePost.id} style={styles.card}>
-        {/* Collapsible Header */}
         <TouchableOpacity
           onPress={() => toggleExpanded(feePost.id)}
           style={styles.cardHeader}
         >
           <View style={styles.headerContent}>
             <Text style={styles.cardTitle}>{feePost.title}</Text>
-
-            {/* Status and Late Fee Info */}
             <View style={styles.headerInfo}>
               {feePost.is_paid ? (
                 <View style={styles.paidBadge}>
@@ -201,7 +277,6 @@ const PaymentScreen = () => {
                   <Text style={styles.unpaidBadgeText}>UNPAID</Text>
                 </View>
               )}
-
               {totalLateFee > 0 && !feePost.is_paid && (
                 <View style={styles.lateFeeBadge}>
                   <Text style={styles.lateFeeBadgeText}>
@@ -211,16 +286,13 @@ const PaymentScreen = () => {
               )}
             </View>
           </View>
-
           <Text style={styles.expandIcon}>
             {expandedPosts.includes(feePost.id) ? '▼' : '▶'}
           </Text>
         </TouchableOpacity>
 
-        {/* Expandable Content */}
         {expandedPosts.includes(feePost.id) && (
           <View style={styles.expandedContent}>
-            {/* Deadline information */}
             <View style={styles.deadlineInfo}>
               <Text style={styles.deadlineText}>
                 Last date to pay fee: {formatDate(feePost.deadline)}
@@ -232,7 +304,6 @@ const PaymentScreen = () => {
               )}
             </View>
 
-            {/* Dynamic fee breakdown */}
             {Object.entries(feePost.other_fee).map(([feeType, amount]) => (
               <View key={feeType} style={styles.feeRow}>
                 <Text style={styles.feeLabel}>{feeType}</Text>
@@ -245,7 +316,6 @@ const PaymentScreen = () => {
               <Text style={styles.feeAmount}>₹ {baseFeeAmount.toLocaleString('en-IN')}</Text>
             </View>
 
-            {/* Late fee row - only show if there's a late fee and not paid */}
             {totalLateFee > 0 && !feePost.is_paid && (
               <View style={[styles.feeRow, styles.lateFeeRow]}>
                 <Text style={styles.lateFeeLabel}>
@@ -269,10 +339,10 @@ const PaymentScreen = () => {
                 </View>
               ) : (
                 <TouchableOpacity
-                  onPress={() => handlePayment(feePost)}
-                  style={styles.payButton}
+                  onPress={() => handleUPIPayment(feePost)}
+                  style={styles.upiButton}
                 >
-                  <Text style={styles.payButtonText}>Pay Now</Text>
+                  <Text style={styles.upiButtonText}>Pay with UPI</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -309,8 +379,8 @@ const PaymentScreen = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={['#FF6F61']} // Android
-          tintColor="#FF6F61" // iOS
+          colors={['#FF6F61']}
+          tintColor="#FF6F61"
         />
       }
     >
@@ -323,11 +393,64 @@ const PaymentScreen = () => {
       ) : (
         feePosts.map(renderFeePost)
       )}
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showCategoryModal}
+        onRequestClose={() => setShowCategoryModal(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalBackground}>
+            <View style={styles.modalView}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Select Your Class Category</Text>
+                <Text style={styles.modalSubtitle}>Choose the appropriate category for fee payment</Text>
+              </View>
+
+              <View style={styles.modalContent}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.playgroupButton]}
+                  onPress={() => handleUPIPaymentWithCategory('playgroup')}
+                >
+                  <View style={styles.buttonContent}>
+                    <Image source={PlaygroupIcon} style={styles.buttonIcon} />
+                    <View style={styles.buttonTextContainer}>
+                      <Text style={styles.modalButtonText}>Play group / Nursery</Text>
+                      <Text style={styles.modalButtonSubtext}>For younger students</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <View style={styles.divider} />
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.lkgButton]}
+                  onPress={() => handleUPIPaymentWithCategory('lkgAndUpper')}
+                >
+                  <View style={styles.buttonContent}>
+                    <Image source={LkgIcon} style={styles.buttonIcon} />
+                    <View style={styles.buttonTextContainer}>
+                      <Text style={styles.modalButtonText}>LKG and Upper Classes</Text>
+                      <Text style={styles.modalButtonSubtext}>For older students</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowCategoryModal(false)}
+              >
+                <Text style={styles.closeButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
-
-export default PaymentScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -425,7 +548,7 @@ const styles = StyleSheet.create({
     marginTop: 25,
     justifyContent: "space-between",
   },
-  payButton: {
+  upiButton: {
     backgroundColor: "#fff",
     paddingVertical: 12,
     paddingHorizontal: 30,
@@ -434,8 +557,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  payButtonText: {
-    color: "#FF6F61",
+  upiButtonText: {
+    color: "#212121",
     fontWeight: "bold",
     fontSize: 18,
   },
@@ -549,4 +672,111 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.3)",
   },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalBackground: {
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalView: {
+    backgroundColor: "white",
+    borderRadius: 25,
+    width: '85%',
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  modalHeader: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  modalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  modalButton: {
+    borderRadius: 15,
+    padding: 15,
+    marginVertical: 8,
+    width: '100%',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  playgroupButton: {
+    backgroundColor: "#FF9E80",
+  },
+  lkgButton: {
+    backgroundColor: "#81C784",
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buttonIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 15,
+  },
+  buttonTextContainer: {
+    flex: 1,
+  },
+  modalButtonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  modalButtonSubtext: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    marginTop: 3,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    marginVertical: 10,
+  },
+  closeButton: {
+    padding: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: "#FF6F61",
+    fontWeight: "600",
+    fontSize: 16,
+  },
 });
+
+export default PaymentScreen;

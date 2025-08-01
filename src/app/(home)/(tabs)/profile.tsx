@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import messaging from '@react-native-firebase/messaging';
 import { getUserInfo } from '../../../api/Auth';
 import { getStudentById, updateStudent } from '../../../api/Students';
+import Information from '../../../Components/Information';
 
 const ProfileScreen = () => {
     const [userInfo, setUserInfo] = useState(null);
@@ -151,6 +152,8 @@ const ProfileScreen = () => {
 
                     {/* {renderMenuItem('photo-library', 'Gallery', () => router.push('/(home)/gallary'))} */}
                     {/* {renderMenuItem('info-outline', 'About', () => { })} */}
+
+                    <Information />
 
                     <TouchableOpacity onPress={showLogoutConfirmation} style={styles.logoutButton}>
                         <MaterialIcons name="logout" size={18} color="white" />
